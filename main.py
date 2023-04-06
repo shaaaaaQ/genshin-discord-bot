@@ -4,20 +4,12 @@ import discord
 import config
 
 
-def get_prefixes(bot, message):
-    prefixes = [
-        f'<@{bot.user.id}>',
-        config.prefix
-    ]
-    return prefixes
-
-
 class Bot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
         super().__init__(
-            command_prefix=get_prefixes,
+            command_prefix=config.prefix,
             intents=intents
         )
         self.connections = {}
