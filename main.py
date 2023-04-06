@@ -12,7 +12,6 @@ class Bot(commands.Bot):
             command_prefix=config.prefix,
             intents=intents
         )
-        self.connections = {}
 
     async def setup_hook(self):
         await self.load_extension('commands')
