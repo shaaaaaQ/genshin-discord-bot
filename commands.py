@@ -6,7 +6,31 @@ import discord
 import requests
 import pyocr
 
+
 tools = pyocr.get_available_tools()
+
+locales = {
+    'ja': {
+        'code': 'jpn',
+        'prefix': '・',
+        'crit_rate': '会心率',
+        'crit_dmg': '会心ダメージ',
+        'atk': '攻撃力',
+        'hp': 'HP',
+        'score': 'スコア',
+        'substats': 'サブステータス'
+    },
+    'en': {
+        'code': 'eng',
+        'prefix': '+ ',
+        'crit_rate': 'CRIT Rate',
+        'crit_dmg': 'CRIT DMG',
+        'atk': 'ATK',
+        'hp': 'HP',
+        'score': 'Score',
+        'substats': 'Sub stats'
+    }
+}
 
 
 def has_attachment():
@@ -25,81 +49,83 @@ class Artifact(commands.Cog):
             await ctx.reply('添付ファイルがない')
         else:
             await ctx.reply('error')
+            print(error)
 
     @commands.command()
     @has_attachment()
-    async def crit(self, ctx):
+    async def crit(self, ctx, lang='ja'):
         """
         画像からスコア計算(会心のみ)
         会心率 * 2 + 会心ダメージ
         """
-        url = ctx.message.attachments[0].url
-        stats = self.get_stats(url)
-        score = 0
-        for stat in stats:
-            value = self.get_value(stat)
-            if stat.startswith('・会心率'):
-                score += value*2
-            if stat.startswith('・会心ダメージ'):
-                score += value
-        embed = self.create_embed(stats, score)
-        await ctx.reply(embed=embed)
+        await self.proc(ctx, 'crit', lang)
 
     @commands.command()
     @has_attachment()
-    async def atk(self, ctx):
+    async def atk(self, ctx, lang='ja'):
         """
         画像からスコア計算(攻撃力%)
         会心率 * 2 + 会心ダメージ + 攻撃力%
         """
-        url = ctx.message.attachments[0].url
-        stats = self.get_stats(url)
-        score = 0
-        for stat in stats:
-            value = self.get_value(stat)
-            if stat.startswith('・会心率'):
-                score += value*2
-            if stat.startswith('・会心ダメージ'):
-                score += value
-            if stat.startswith('・攻撃力') and stat.endswith('%'):
-                score += value
-        embed = self.create_embed(stats, score)
-        await ctx.reply(embed=embed)
+        await self.proc(ctx, 'atk', lang)
 
     @commands.command()
     @has_attachment()
-    async def hp(self, ctx):
+    async def hp(self, ctx, lang='ja'):
         """
         画像からスコア計算(HP%)
         会心率 * 2 + 会心ダメージ + HP%
         """
+        await self.proc(ctx, 'hp', lang)
+
+    async def proc(self, ctx, mh, lang):
+        t = locales[lang]
         url = ctx.message.attachments[0].url
-        stats = self.get_stats(url)
-        score = 0
-        for stat in stats:
-            value = self.get_value(stat)
-            if stat.startswith('・会心率'):
-                score += value*2
-            if stat.startswith('・会心ダメージ'):
-                score += value
-            if stat.startswith('・HP') and stat.endswith('%'):
-                score += value
-        embed = self.create_embed(stats, score)
+        stats = self.get_stats(t, url)
+        score = self.calc_score(t, stats)[mh]
+        embed = self.create_embed(t, stats, score)
         await ctx.reply(embed=embed)
 
-    def get_stats(self, url):
+    def get_stats(self, t, url):
         img = Image.open(BytesIO(requests.get(url).content))
-        text = tools[0].image_to_string(img, lang='jpn')
+        text = tools[0].image_to_string(img, t['code'])
         print(text)
-        return list(filter(lambda s: s.startswith('・'), text.splitlines()))
+        stats = []
+        for text in text.splitlines():
+            if text.startswith(t['prefix']):
+                stats.append('・{}'.format(text[len(t['prefix']):]))
+        return stats
 
     def get_value(self, stat):
         return Decimal(stat.split('+')[1].replace('%', ''))
 
-    def create_embed(self, stats, score):
+    def calc_score(self, t, stats):
+        score = {
+            'crit': 0,
+            'atk': 0,
+            'hp': 0
+        }
+        for stat in stats:
+            stat = stat[1:]
+            value = self.get_value(stat)
+            if stat.startswith(t['crit_rate']):
+                score['crit'] += value*2
+            if stat.startswith(t['crit_dmg']):
+                score['crit'] += value
+            if stat.startswith(t['atk']) and stat.endswith('%'):
+                score['atk'] += value
+            if stat.startswith(t['hp']) and stat.endswith('%'):
+                score['hp'] += value
+        score['atk'] += score['crit']
+        score['hp'] += score['crit']
+        print(score)
+        return score
+
+    def create_embed(self, t, stats, score):
         embed = discord.Embed()
-        embed.add_field(name='サブステータス', value='\n'.join(stats), inline=False)
-        embed.add_field(name='スコア', value=score, inline=False)
+        embed.add_field(name=t['substats'],
+                        value='\n'.join(stats), inline=False)
+        embed.add_field(name=t['score'], value=score, inline=False)
         return embed
 
 
