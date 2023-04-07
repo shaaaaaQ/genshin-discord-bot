@@ -6,7 +6,7 @@ import discord
 import requests
 import pyocr
 
-engine = pyocr.get_available_tools()[0]
+tools = pyocr.get_available_tools()
 
 
 def has_attachment():
@@ -77,7 +77,7 @@ class Artifact(commands.Cog):
 
     def get_stats(self, url):
         img = Image.open(BytesIO(requests.get(url).content))
-        text = engine.image_to_string(img, lang='jpn')
+        text = tools[0].image_to_string(img, lang='jpn')
         print(text)
         return list(filter(lambda s: s.startswith('・'), text.splitlines()))
 
