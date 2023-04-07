@@ -1,18 +1,17 @@
 from io import BytesIO
 from discord.ext import commands
 from PIL import Image
-import math
+from decimal import Decimal
 import requests
 import pyocr
 
 engine = pyocr.get_available_tools()[0]
 
 
-def get_stats(url):
-    img = Image.open(BytesIO(requests.get(url).content))
-    text = engine.image_to_string(img, lang='jpn')
-    print(text)
-    return filter(lambda s: s.startswith('・'), text.splitlines())
+def has_attachment():
+    def predicate(ctx):
+        return ctx.message.attachments
+    return commands.check(predicate)
 
 
 class Artifact(commands.Cog):
@@ -20,65 +19,59 @@ class Artifact(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @has_attachment()
     async def crit(self, ctx):
-        if not ctx.message.attachments:
-            print('nai')
-            return
-
         url = ctx.message.attachments[0].url
-        stats = get_stats(url)
+        stats = self.get_stats(url)
         score = 0
         for stat in stats:
-            print(stat)
-            value = float(stat.split('+')[1].replace('%', ''))
-            print(value)
+            value = self.get_value(stat)
             if stat.startswith('・会心率'):
                 score += value*2
             if stat.startswith('・会心ダメージ'):
                 score += value
-        await ctx.send(math.floor(score*10)/10)
+        await ctx.send(score)
 
     @commands.command()
+    @has_attachment()
     async def atk(self, ctx):
-        if not ctx.message.attachments:
-            print('nai')
-            return
-
         url = ctx.message.attachments[0].url
-        stats = get_stats(url)
+        stats = self.get_stats(url)
         score = 0
         for stat in stats:
-            print(stat)
-            value = float(stat.split('+')[1].replace('%', ''))
-            print(value)
+            value = self.get_value(stat)
             if stat.startswith('・会心率'):
                 score += value*2
             if stat.startswith('・会心ダメージ'):
                 score += value
             if stat.startswith('・攻撃力') and stat.endswith('%'):
                 score += value
-        await ctx.send(math.floor(score*10)/10)
+        await ctx.send(score)
 
     @commands.command()
+    @has_attachment()
     async def hp(self, ctx):
-        if not ctx.message.attachments:
-            print('nai')
-            return
-
         url = ctx.message.attachments[0].url
-        stats = get_stats(url)
+        stats = self.get_stats(url)
         score = 0
         for stat in stats:
-            print(stat)
-            value = float(stat.split('+')[1].replace('%', ''))
-            print(value)
+            value = self.get_value(stat)
             if stat.startswith('・会心率'):
                 score += value*2
             if stat.startswith('・会心ダメージ'):
                 score += value
             if stat.startswith('・HP') and stat.endswith('%'):
                 score += value
-        await ctx.send(math.floor(score*10)/10)
+        await ctx.send(score)
+
+    def get_stats(self, url):
+        img = Image.open(BytesIO(requests.get(url).content))
+        text = engine.image_to_string(img, lang='jpn')
+        print(text)
+        return filter(lambda s: s.startswith('・'), text.splitlines())
+
+    def get_value(self, stat):
+        return Decimal(stat.split('+')[1].replace('%', ''))
 
 
 async def setup(bot):

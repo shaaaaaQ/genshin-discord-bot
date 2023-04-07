@@ -4,17 +4,22 @@ import discord
 import config
 
 
+def get_prefix(bot, message):
+    return commands.when_mentioned_or(config.prefix)(bot, message)
+
+
 class Bot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
         super().__init__(
-            command_prefix=config.prefix,
+            command_prefix=get_prefix,
             intents=intents
         )
 
     async def setup_hook(self):
         await self.load_extension('commands')
+        # await self.tree.sync()
 
     def run(self):
         super().run(config.token)
