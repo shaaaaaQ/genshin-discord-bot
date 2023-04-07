@@ -29,6 +29,10 @@ class Artifact(commands.Cog):
     @commands.command()
     @has_attachment()
     async def crit(self, ctx):
+        """
+        画像からスコア計算(会心のみ)
+        会心率 * 2 + 会心ダメージ
+        """
         url = ctx.message.attachments[0].url
         stats = self.get_stats(url)
         score = 0
@@ -44,6 +48,10 @@ class Artifact(commands.Cog):
     @commands.command()
     @has_attachment()
     async def atk(self, ctx):
+        """
+        画像からスコア計算(攻撃力%)
+        会心率 * 2 + 会心ダメージ + 攻撃力%
+        """
         url = ctx.message.attachments[0].url
         stats = self.get_stats(url)
         score = 0
@@ -61,6 +69,10 @@ class Artifact(commands.Cog):
     @commands.command()
     @has_attachment()
     async def hp(self, ctx):
+        """
+        画像からスコア計算(HP%)
+        会心率 * 2 + 会心ダメージ + HP%
+        """
         url = ctx.message.attachments[0].url
         stats = self.get_stats(url)
         score = 0
