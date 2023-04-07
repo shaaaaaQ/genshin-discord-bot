@@ -8,9 +8,9 @@ prefix = '-'
 
 ### コマンド
 []はオプション
-- `crit [言語]`
-- `atk [言語]`
-- `hp [言語]`
+- `crit [LANG]`
+- `atk [LANG]`
+- `hp [LANG]`
 
 ### 対応言語
 - ja
