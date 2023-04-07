@@ -93,7 +93,7 @@ class Artifact(commands.Cog):
         stats = []
         for text in text.splitlines():
             if text.startswith(t['prefix']):
-                stats.append('・{}'.format(text[len(t['prefix']):]))
+                stats.append('・' + text[len(t['prefix']):])
         return stats
 
     def get_value(self, stat):
