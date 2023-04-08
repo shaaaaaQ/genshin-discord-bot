@@ -3,6 +3,10 @@ import discord
 
 import config
 
+cogs = [
+    'cogs.artifact'
+]
+
 
 def get_prefix(bot, message):
     return commands.when_mentioned_or(config.prefix)(bot, message)
@@ -18,7 +22,8 @@ class Bot(commands.Bot):
         )
 
     async def setup_hook(self):
-        await self.load_extension('commands')
+        for cog in cogs:
+            await self.load_extension(cog)
         await self.tree.sync()
 
     def run(self):
