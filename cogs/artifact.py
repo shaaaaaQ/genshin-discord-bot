@@ -1,10 +1,13 @@
 from io import BytesIO
+
 from discord.ext import commands
 from PIL import Image
 from decimal import Decimal
 import discord
 import requests
 import pyocr
+
+from .theoretical_artifact_score import TheoreticalArtifactScore
 
 
 tools = pyocr.get_available_tools()
@@ -147,7 +150,7 @@ class Artifact(commands.Cog):
         画像からスコア計算(会心のみ)
         会心率 * 2 + 会心ダメージ
         """
-        await self.proc(ctx, lang, attachment, 'crit')
+        await self.proc(ctx, lang, attachment, 'crit', self.calc_score)
 
     @commands.hybrid_command()
     async def atk(self, ctx, attachment: discord.Attachment,
@@ -156,7 +159,7 @@ class Artifact(commands.Cog):
         画像からスコア計算(攻撃力%)
         会心率 * 2 + 会心ダメージ + 攻撃力%
         """
-        await self.proc(ctx, lang, attachment, 'atk')
+        await self.proc(ctx, lang, attachment, 'atk', self.calc_score)
 
     @commands.hybrid_command()
     async def hp(self, ctx, attachment: discord.Attachment,
@@ -165,13 +168,40 @@ class Artifact(commands.Cog):
         画像からスコア計算(HP%)
         会心率 * 2 + 会心ダメージ + HP%
         """
-        await self.proc(ctx, lang, attachment, 'hp')
+        await self.proc(ctx, lang, attachment, 'hp', self.calc_score)
 
-    async def proc(self, ctx, lang, attachment, mh):
+    @commands.hybrid_command()
+    async def theoretical_crit(self, ctx, attachment: discord.Attachment,
+                   lang: LangConv = 'ja'):
+        """
+        画像からスコア計算(会心のみ)
+        会心率 + 会心ダメージ の理論値から見た上昇割合
+        """
+        await self.proc(ctx, lang, attachment, 'crit', self.calc_theoretical_score)
+
+    @commands.hybrid_command()
+    async def theoretical_atk(self, ctx, attachment: discord.Attachment,
+                  lang: LangConv = 'ja'):
+        """
+        画像からスコア計算(攻撃力%)
+        会心率 + 会心ダメージ + 攻撃力% の理論値から見た上昇割合
+        """
+        await self.proc(ctx, lang, attachment, 'atk', self.calc_theoretical_score)
+
+    @commands.hybrid_command()
+    async def theoretical_hp(self, ctx, attachment: discord.Attachment,
+                 lang: LangConv = 'ja'):
+        """
+        画像からスコア計算(HP%)
+        会心率 + 会心ダメージ + HP% の理論値から見た上昇割合
+        """
+        await self.proc(ctx, lang, attachment, 'hp', self.calc_theoretical_score)
+
+    async def proc(self, ctx, lang, attachment, mh, func):
         t = locales[lang]
         url = attachment.url
         stats = self.get_stats(t, url)
-        score = self.calc_score(t, stats)[mh]
+        score = func(t, stats)[mh]
         embed = self.create_embed(t, stats, score)
         await ctx.reply(embed=embed)
 
@@ -215,6 +245,26 @@ class Artifact(commands.Cog):
         score['hp'] += score['crit']
         print(score)
         return score
+
+    def calc_theoretical_score(self, t, stats):
+        extracted_stats = {}
+        for stat in stats:
+            stat = stat[1:]
+            value = self.get_value(stat)
+            if stat.startswith(t['crit_rate']):
+                extracted_stats['crit_rate'] = value
+            if stat.startswith(t['crit_dmg']):
+                extracted_stats['crit_dmg'] = value
+            if stat.startswith(t['atk']) and stat.endswith('%'):
+                extracted_stats['rated_atk'] = value
+            if stat.startswith(t['hp']) and stat.endswith('%'):
+                extracted_stats['rated_hp'] = value
+        score = TheoreticalArtifactScore(**extracted_stats)
+        return {
+            'crit': score.calc_theoretical_rate(['crit_dmg', 'crit_rate']),
+            'atk': score.calc_theoretical_rate(['crit_dmg', 'crit_rate', 'rated_atk']),
+            'hp': score.calc_theoretical_rate(['crit_dmg', 'crit_rate', 'rated_hp']),
+        }
 
     def create_embed(self, t, stats, score):
         embed = discord.Embed()
