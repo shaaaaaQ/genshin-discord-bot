@@ -19,7 +19,7 @@ class Bot(commands.Bot):
 
     async def setup_hook(self):
         await self.load_extension('commands')
-        # await self.tree.sync()
+        await self.tree.sync()
 
     def run(self):
         super().run(config.token)
