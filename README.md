@@ -2,6 +2,7 @@ Debian(wsl1), python 3.11.1で動作確認
 ```bash
 cd genshin-discord-bot
 # tesseract-ocrをインストール
+# 使いたい言語のあれ(tesseract-ocr-jpnとか)もインストールする
 sudo apt install tesseract-ocr tesseract-ocr-jpn
 # venv(やらなくてもいい)
 python -m venv venv
