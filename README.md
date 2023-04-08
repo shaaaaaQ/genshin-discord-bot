@@ -16,13 +16,3 @@ config.pyの中身
 token = 'ここにtoken'
 prefix = '-'
 ```
-
-### コマンド
-[]はオプション
-- `crit [LANG]`
-- `atk [LANG]`
-- `hp [LANG]`
-
-### 対応言語
-- ja
-- en
