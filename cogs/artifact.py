@@ -150,7 +150,7 @@ class Artifact(commands.Cog):
         画像からスコア計算(会心のみ)
         会心率 * 2 + 会心ダメージ
         """
-        await self.proc(ctx, lang, attachment, 'crit', self.calc_score)
+        await self.proc(ctx, lang, attachment, 'crit')
 
     @commands.hybrid_command()
     async def atk(self, ctx, attachment: discord.Attachment,
@@ -159,7 +159,7 @@ class Artifact(commands.Cog):
         画像からスコア計算(攻撃力%)
         会心率 * 2 + 会心ダメージ + 攻撃力%
         """
-        await self.proc(ctx, lang, attachment, 'atk', self.calc_score)
+        await self.proc(ctx, lang, attachment, 'atk')
 
     @commands.hybrid_command()
     async def hp(self, ctx, attachment: discord.Attachment,
@@ -168,41 +168,14 @@ class Artifact(commands.Cog):
         画像からスコア計算(HP%)
         会心率 * 2 + 会心ダメージ + HP%
         """
-        await self.proc(ctx, lang, attachment, 'hp', self.calc_score)
+        await self.proc(ctx, lang, attachment, 'hp')
 
-    @commands.hybrid_command()
-    async def theoretical_crit(self, ctx, attachment: discord.Attachment,
-                   lang: LangConv = 'ja'):
-        """
-        画像からスコア計算(会心のみ)
-        会心率 + 会心ダメージ の理論値から見た上昇割合
-        """
-        await self.proc(ctx, lang, attachment, 'crit', self.calc_theoretical_score)
-
-    @commands.hybrid_command()
-    async def theoretical_atk(self, ctx, attachment: discord.Attachment,
-                  lang: LangConv = 'ja'):
-        """
-        画像からスコア計算(攻撃力%)
-        会心率 + 会心ダメージ + 攻撃力% の理論値から見た上昇割合
-        """
-        await self.proc(ctx, lang, attachment, 'atk', self.calc_theoretical_score)
-
-    @commands.hybrid_command()
-    async def theoretical_hp(self, ctx, attachment: discord.Attachment,
-                 lang: LangConv = 'ja'):
-        """
-        画像からスコア計算(HP%)
-        会心率 + 会心ダメージ + HP% の理論値から見た上昇割合
-        """
-        await self.proc(ctx, lang, attachment, 'hp', self.calc_theoretical_score)
-
-    async def proc(self, ctx, lang, attachment, mh, func):
+    async def proc(self, ctx, lang, attachment, mh):
         t = locales[lang]
         url = attachment.url
         stats = self.get_stats(t, url)
-        score = func(t, stats)[mh]
-        embed = self.create_embed(t, stats, score)
+        score, rate = self.calc_score(t, stats)[mh]
+        embed = self.create_embed(t, stats, score, rate)
         await ctx.reply(embed=embed)
 
     def get_stats(self, t, url):
@@ -225,28 +198,6 @@ class Artifact(commands.Cog):
         return Decimal(stat.split('+')[1].replace('%', ''))
 
     def calc_score(self, t, stats):
-        score = {
-            'crit': 0,
-            'atk': 0,
-            'hp': 0
-        }
-        for stat in stats:
-            stat = stat[1:]
-            value = self.get_value(stat)
-            if stat.startswith(t['crit_rate']):
-                score['crit'] += value*2
-            if stat.startswith(t['crit_dmg']):
-                score['crit'] += value
-            if stat.startswith(t['atk']) and stat.endswith('%'):
-                score['atk'] += value
-            if stat.startswith(t['hp']) and stat.endswith('%'):
-                score['hp'] += value
-        score['atk'] += score['crit']
-        score['hp'] += score['crit']
-        print(score)
-        return score
-
-    def calc_theoretical_score(self, t, stats):
         extracted_stats = {}
         for stat in stats:
             stat = stat[1:]
@@ -261,16 +212,26 @@ class Artifact(commands.Cog):
                 extracted_stats['rated_hp'] = value
         score = TheoreticalArtifactScore(**extracted_stats)
         return {
-            'crit': score.calc_theoretical_rate(['crit_dmg', 'crit_rate']),
-            'atk': score.calc_theoretical_rate(['crit_dmg', 'crit_rate', 'rated_atk']),
-            'hp': score.calc_theoretical_rate(['crit_dmg', 'crit_rate', 'rated_hp']),
+            'crit': (
+                score.calc_general_rate('crit_only'),
+                score.calc_theoretical_rate(['crit_dmg', 'crit_rate']),
+            ),
+            'atk': (
+                score.calc_general_rate('rated_atk'),
+                score.calc_theoretical_rate(['crit_dmg', 'crit_rate', 'rated_atk']),
+            ),
+            'hp': (
+                score.calc_general_rate('rated_hp'),
+                score.calc_theoretical_rate(['crit_dmg', 'crit_rate', 'rated_hp']),
+            ),
         }
 
-    def create_embed(self, t, stats, score):
+    def create_embed(self, t, stats, score, rate):
         embed = discord.Embed()
         embed.add_field(name='サブステータス',
                         value='\n'.join(stats), inline=False)
         embed.add_field(name='スコア', value=score, inline=False)
+        embed.add_field(name='上昇割合', value=rate, inline=False)
         return embed
 
 
