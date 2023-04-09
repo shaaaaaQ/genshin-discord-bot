@@ -1,10 +1,13 @@
 from io import BytesIO
+
 from discord.ext import commands
 from PIL import Image
 from decimal import Decimal
 import discord
 import requests
 import pyocr
+
+from .theoretical_artifact_score import TheoreticalArtifactScore
 
 
 tools = pyocr.get_available_tools()
@@ -171,8 +174,8 @@ class Artifact(commands.Cog):
         t = locales[lang]
         url = attachment.url
         stats = self.get_stats(t, url)
-        score = self.calc_score(t, stats)[mh]
-        embed = self.create_embed(t, stats, score)
+        score, rate = self.calc_score(t, stats)[mh]
+        embed = self.create_embed(t, stats, score, rate)
         await ctx.reply(embed=embed)
 
     def get_stats(self, t, url):
@@ -192,35 +195,43 @@ class Artifact(commands.Cog):
         return stats
 
     def get_value(self, stat):
-        return Decimal(stat.split('+')[1].replace('%', ''))
+        return float(stat.split('+')[1].replace('%', ''))
 
     def calc_score(self, t, stats):
-        score = {
-            'crit': 0,
-            'atk': 0,
-            'hp': 0
-        }
+        extracted_stats = {}
         for stat in stats:
             stat = stat[1:]
             value = self.get_value(stat)
             if stat.startswith(t['crit_rate']):
-                score['crit'] += value*2
+                extracted_stats['crit_rate'] = value
             if stat.startswith(t['crit_dmg']):
-                score['crit'] += value
+                extracted_stats['crit_dmg'] = value
             if stat.startswith(t['atk']) and stat.endswith('%'):
-                score['atk'] += value
+                extracted_stats['rated_atk'] = value
             if stat.startswith(t['hp']) and stat.endswith('%'):
-                score['hp'] += value
-        score['atk'] += score['crit']
-        score['hp'] += score['crit']
-        print(score)
-        return score
+                extracted_stats['rated_hp'] = value
+        score = TheoreticalArtifactScore(**extracted_stats)
+        return {
+            'crit': (
+                score.calc_general_rate('crit_only'),
+                score.calc_theoretical_rate(['crit_dmg', 'crit_rate']),
+            ),
+            'atk': (
+                score.calc_general_rate('rated_atk'),
+                score.calc_theoretical_rate(['crit_dmg', 'crit_rate', 'rated_atk']),
+            ),
+            'hp': (
+                score.calc_general_rate('rated_hp'),
+                score.calc_theoretical_rate(['crit_dmg', 'crit_rate', 'rated_hp']),
+            ),
+        }
 
-    def create_embed(self, t, stats, score):
+    def create_embed(self, t, stats, score, rate):
         embed = discord.Embed()
         embed.add_field(name='サブステータス',
                         value='\n'.join(stats), inline=False)
         embed.add_field(name='スコア', value=score, inline=False)
+        embed.add_field(name='理論値比', value=f'{rate}%', inline=False)
         return embed
 
 
