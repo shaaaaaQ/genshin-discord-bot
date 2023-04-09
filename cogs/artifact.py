@@ -2,7 +2,6 @@ from io import BytesIO
 
 from discord.ext import commands
 from PIL import Image
-from decimal import Decimal
 import discord
 import requests
 import pyocr
@@ -186,7 +185,8 @@ class Artifact(commands.Cog):
         for text in text.splitlines():
             if (text.startswith('+ ') or
                 text.startswith('* ') or
-                    text.startswith('; ')):
+                text.startswith('; ') or
+                    text.startswith('・ ')):
                 text = '・' + text[2:]
             if text.endswith('%6'):
                 text = text[:-1]
@@ -218,11 +218,13 @@ class Artifact(commands.Cog):
             ),
             'atk': (
                 score.calc_general_rate('rated_atk'),
-                score.calc_theoretical_rate(['crit_dmg', 'crit_rate', 'rated_atk']),
+                score.calc_theoretical_rate(
+                    ['crit_dmg', 'crit_rate', 'rated_atk']),
             ),
             'hp': (
                 score.calc_general_rate('rated_hp'),
-                score.calc_theoretical_rate(['crit_dmg', 'crit_rate', 'rated_hp']),
+                score.calc_theoretical_rate(
+                    ['crit_dmg', 'crit_rate', 'rated_hp']),
             ),
         }
 
