@@ -1,4 +1,4 @@
-from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
+from decimal import Decimal, ROUND_UP, ROUND_HALF_UP, ROUND_DOWN
 
 
 class TheoreticalArtifactScore:
@@ -102,7 +102,14 @@ class TheoreticalArtifactScore:
             self._calc_theoretical_rate(attr, initial=len(attrs), raises=raises)
             for attr in attrs
         ]
-        return self._quantize(sum(rates) * 100)
+        # 表示スコアが四捨五入済みのため、sum(rates)が1を超えることがあるので対処)
+        # また、下振れの対策も兼ねてここの丸めは切り上げとする
+        # TODO: 表示スコア → 内部スコアへの変換ロジックを用いた高精度算出
+        return self._quantize(
+            min(sum(rates), 1) * 100,
+            rank='1',
+            method=ROUND_UP,
+        )
 
 
 if __name__ == '__main__':
@@ -113,13 +120,13 @@ if __name__ == '__main__':
         crit_rate=2.7,
         crit_dmg=5.4,
     )
-    # 会心率オプションとしての理論値から見た割合: 11.5
+    # 会心率オプションとしての理論値から見た割合: 12
     print(tas.calc_theoretical_rate(['crit_rate']))
-    # hp固定値が5回伸びた際の理論値から見た割合: 58.3
+    # hp固定値が5回伸びた際の理論値から見た割合: 59
     print(tas.calc_theoretical_rate(['fixed_hp'], 5))
-    # hp固定値を除いた聖遺物としての理論値から見た割合: 26.1
+    # hp固定値を除いた聖遺物としての理論値から見た割合: 27
     print(tas.calc_theoretical_rate(['crit_rate', 'crit_dmg', 'rated_hp']))
-    # 聖遺物としての理論値スコア: 62.1
+    # 聖遺物としての理論値スコア: 63
     print(tas.calc_theoretical_rate())
 
     # 理論上最強聖遺物
@@ -127,16 +134,26 @@ if __name__ == '__main__':
         rated_atk=5.8,
         crit_dmg=38.9,
         crit_rate=7.8,
-        fixed_def=23,
+        fixed_def=23
     )
-    # 率ダメ理論値スコア: 100.0
+    # 率ダメ理論値スコア: 100
     print(tas.calc_theoretical_rate(['crit_rate', 'crit_dmg', 'rated_atk']))
-    # トータルスコア: 100.0
+    # トータルスコア: 100
     print(tas.calc_theoretical_rate())
     # 一般的な聖遺物スコアが理論値の 60.3であることの確認
     assert tas.calc_general_rate('rated_atk') == Decimal('60.3')
-    
-    # 理論値で100.0になることを確認する
+
+    # 切り捨てが多い下振れ算出される理論上最強聖遺物
+    tas = TheoreticalArtifactScore(
+        charge_rate=19.4, # 6.48 * 3 = 19.44
+        crit_dmg=15.5, # 7.77 * 2 = 15.54
+        fixed_atk=19, # 19.45
+        fixed_def=69, # 23.15 * 3 = 69.45
+    )
+    # トータルスコア: 100
+    print(tas.calc_theoretical_rate())
+
+    # 理論値で100になることを確認する
     theoretical_values=dict(
         fixed_atk=117,
         rated_atk=35.0,
@@ -154,4 +171,4 @@ if __name__ == '__main__':
     )
     # 各値ごとに確認
     for k in tas.theoretical_value.keys():
-        assert tas.calc_theoretical_rate([k])== Decimal('100.0')
+        assert tas.calc_theoretical_rate([k])== Decimal('100')
