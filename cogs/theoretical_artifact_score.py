@@ -1,18 +1,31 @@
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 
 
 class TheoreticalArtifactScore:
     theoretical_value = {
-        'fixed_hp': 299,
-        'fixed_atk': 19,
-        'fixed_def': 23,
-        'rated_hp': 5.8,
-        'rated_atk': 5.8,
-        'rated_def': 7.3,
-        'crit_dmg': 7.8,
-        'crit_rate': 3.9,
-        'charge_rate': 6.5,
-        'elemental_mastery': 23,
+        'fixed_hp': 298.75,
+        'fixed_atk': 19.45,
+        'fixed_def': 23.15,
+        'rated_hp': 5.83,
+        'rated_atk': 5.83,
+        'rated_def': 7.29,
+        'crit_dmg': 7.77,
+        'crit_rate': 3.89,
+        'charge_rate': 6.48,
+        'elemental_mastery': 23.31,
+    }
+
+    round_rank = {
+        'fixed_hp': '1',
+        'fixed_atk': '1',
+        'fixed_def': '1',
+        'rated_hp': '0.1',
+        'rated_atk': '0.1',
+        'rated_def': '0.1',
+        'crit_dmg': '0.1',
+        'crit_rate': '0.1',
+        'charge_rate': '0.1',
+        'elemental_mastery': '1',
     }
 
     def __init__(
@@ -51,8 +64,8 @@ class TheoreticalArtifactScore:
     def calc_general_rate(self, calc_type: str) -> Decimal:
         return self._quantize(self._calc_by_general_score_logic(calc_type))
 
-    def _quantize(self, value: float) -> Decimal:
-        return Decimal(value).quantize(Decimal('0.1'), ROUND_HALF_UP)
+    def _quantize(self, value: float, rank: str='0.1', method:str = ROUND_DOWN) -> Decimal:
+        return Decimal(value).quantize(Decimal(rank), method)
 
     def _calc_theoretical_rate(
         self, attr: str, initial: int = 1, raises: int = 5
@@ -62,7 +75,15 @@ class TheoreticalArtifactScore:
 
         現在値 / 1回の上昇量の理論値 * (オプション初期値として扱う値 + オプション上昇回数)
         """
-        return getattr(self, attr) / (self.theoretical_value[attr] * (initial + raises))
+        # 誤差を小さくするため、ゲーム表示上の値を算出する
+        denominator = float(self._quantize(
+            self.theoretical_value[attr] * (initial + raises),
+            self.round_rank[attr],
+            ROUND_HALF_UP,
+        ))
+        result = getattr(self, attr) / denominator
+        # print(f'{attr}: {getattr(self, attr)} / {denominator} = {result}')
+        return result
 
     def calc_theoretical_rate(
         self, attrs: 'list[str] | None' = None, raises: int = 5
@@ -82,62 +103,50 @@ class TheoreticalArtifactScore:
 
 
 if __name__ == '__main__':
-    # 手持ちのそこそこ強い羽
+    # 理論上最弱聖遺物
     tas = TheoreticalArtifactScore(
-        fixed_hp=209,
-        rated_hp=9.9,
-        crit_rate=10.1,
-        crit_dmg=20.2,
-    )
-    # 会心率オプションとしての理論値から見た割合
-    # 43.162393162393165
-    print(tas.calc_theoretical_rate(['crit_rate']))
-
-    # 会心率が2回伸びた際の理論値から見た割合
-    # 86.32478632478633
-    print(tas.calc_theoretical_rate(['crit_rate'], 2))
-
-    # hp固定値を除いた聖遺物の理論値から見た割合
-    # 86.07979664014147
-    print(tas.calc_theoretical_rate(['crit_rate', 'crit_dmg', 'rated_hp']))
-
-    # 聖遺物としての理論値から見た割合
-    # 84.28200429699679
-    print(tas.calc_theoretical_rate())
-
-    # 適当に理論上最弱聖遺物
-    tas = TheoreticalArtifactScore(
-        fixed_hp=209 * 6,
+        fixed_hp=1046,
         rated_hp=4.1,
         crit_rate=2.7,
         crit_dmg=5.4,
     )
-    # 会心率オプションとしての理論値から見た割合
-    # 11.53846153846154
+    # 会心率オプションとしての理論値から見た割合: 11.5
     print(tas.calc_theoretical_rate(['crit_rate']))
-
-    # hp固定値が5回伸びた際の理論値から見た割合
-    # 69.89966555183946
+    # hp固定値が5回伸びた際の理論値から見た割合: 58.3
     print(tas.calc_theoretical_rate(['fixed_hp'], 5))
-
-    # hp固定値を除いた聖遺物としての理論値から見た割合
-    # 26.143899204244036
+    # hp固定値を除いた聖遺物としての理論値から見た割合: 26.1
     print(tas.calc_theoretical_rate(['crit_rate', 'crit_dmg', 'rated_hp']))
-
-    # 聖遺物としての理論値スコア
-    # 69.83879854944321
+    # 聖遺物としての理論値スコア: 62.1
     print(tas.calc_theoretical_rate())
 
-    # 適当に理論上最強聖遺物
+    # 理論上最強聖遺物
     tas = TheoreticalArtifactScore(
-        elemental_mastery=23,
-        charge_rate=6.5,
-        crit_rate=3.9 * 3,
-        crit_dmg=7.8 * 4,
+        rated_atk=5.8,
+        crit_dmg=38.9,
+        crit_rate=7.8,
+        fixed_def=23,
     )
-    # 率ダメ理論値スコア
-    # 100
-    print(tas.calc_theoretical_rate(['crit_rate', 'crit_dmg']))
-    # 理論値スコア
-    # 100
+    # 率ダメ理論値スコア: 100.0
+    print(tas.calc_theoretical_rate(['crit_rate', 'crit_dmg', 'rated_atk']))
+    # トータルスコア: 100.0
     print(tas.calc_theoretical_rate())
+    
+    # 理論値で100.0になることを確認する
+    theoretical_values=dict(
+        fixed_atk=117,
+        rated_atk=35.0,
+        fixed_def=139,
+        rated_def=43.7,
+        fixed_hp=1793,
+        rated_hp=35.0,
+        elemental_mastery=140,
+        charge_rate=38.9,
+        crit_rate=23.3,
+        crit_dmg=46.6,
+    )
+    tas = TheoreticalArtifactScore(
+        **theoretical_values
+    )
+    # 各値ごとに確認
+    for k in tas.theoretical_value.keys():
+        assert tas.calc_theoretical_rate([k])== Decimal('100.0')
