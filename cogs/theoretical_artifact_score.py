@@ -62,7 +62,10 @@ class TheoreticalArtifactScore:
         return 0
     
     def calc_general_rate(self, calc_type: str) -> Decimal:
-        return self._quantize(self._calc_by_general_score_logic(calc_type))
+        return self._quantize(
+            self._calc_by_general_score_logic(calc_type),
+            method=ROUND_HALF_UP,
+        )
 
     def _quantize(self, value: float, rank: str='0.1', method:str = ROUND_DOWN) -> Decimal:
         return Decimal(value).quantize(Decimal(rank), method)
@@ -130,6 +133,8 @@ if __name__ == '__main__':
     print(tas.calc_theoretical_rate(['crit_rate', 'crit_dmg', 'rated_atk']))
     # トータルスコア: 100.0
     print(tas.calc_theoretical_rate())
+    # 一般的な聖遺物スコアが理論値の 60.3であることの確認
+    assert tas.calc_general_rate('rated_atk') == Decimal('60.3')
     
     # 理論値で100.0になることを確認する
     theoretical_values=dict(
