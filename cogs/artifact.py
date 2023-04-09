@@ -231,7 +231,7 @@ class Artifact(commands.Cog):
         embed.add_field(name='サブステータス',
                         value='\n'.join(stats), inline=False)
         embed.add_field(name='スコア', value=score, inline=False)
-        embed.add_field(name='上昇割合', value=rate, inline=False)
+        embed.add_field(name='理論値比', value=f'{rate}%', inline=False)
         return embed
 
 
