@@ -195,7 +195,7 @@ class Artifact(commands.Cog):
         return stats
 
     def get_value(self, stat):
-        return Decimal(stat.split('+')[1].replace('%', ''))
+        return float(stat.split('+')[1].replace('%', ''))
 
     def calc_score(self, t, stats):
         extracted_stats = {}
