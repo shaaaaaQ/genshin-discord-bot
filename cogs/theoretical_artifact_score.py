@@ -1,7 +1,8 @@
 from decimal import Decimal, ROUND_UP, ROUND_HALF_UP, ROUND_DOWN
-
+import itertools
 
 class TheoreticalArtifactScore:
+    # TODO: 役割が丸かぶりしているので、後でincrease_tableとマージする
     theoretical_value = {
         'fixed_hp': 298.75,
         'fixed_atk': 19.45,
@@ -13,6 +14,18 @@ class TheoreticalArtifactScore:
         'crit_rate': 3.89,
         'charge_rate': 6.48,
         'elemental_mastery': 23.31,
+    }
+    increase_table = {
+        'fixed_hp': [209.13, 239.00, 268.88, 298.75],
+        'fixed_atk': [13.62, 15.56, 17.51, 19.45],
+        'fixed_def': [16.20, 18.52, 20.83, 23.15],
+        'rated_hp': [4.08, 4.66, 5.25, 5.83],
+        'rated_atk': [4.08, 4.66, 5.25, 5.83],
+        'rated_def': [5.10, 5.83, 6.56, 7.29],
+        'crit_dmg': [5.44, 6.22, 6.99, 7.77],
+        'crit_rate': [2.72, 3.11, 3.50, 3.89],
+        'charge_rate': [4.53, 5.18, 5.83, 6.48],
+        'elemental_mastery': [16.32, 18.65, 20.98, 23.31],
     }
 
     round_rank = {
@@ -52,6 +65,33 @@ class TheoreticalArtifactScore:
         self.charge_rate = charge_rate
         self.elemental_mastery = elemental_mastery
 
+    def _get_inner_option_value(self, attr: str, value: 'float | int') -> float:
+        """表示値から内部の値を算出する（予定の関数）
+        ### note
+        - 上昇回数算出 → あり得る表示値を二分探索 → 内部の値へマッピング
+        - パフォーマンスが微妙なら ↑ を事前計算しておき、辞書から引く……？とか……？
+        """
+        return value
+
+    def _calc_increase_counts(self, attr:str):
+        """表示値から、理論上あり得る上昇回数を算出する"""
+        return [
+            i
+            for i in range(7)
+            if (self.increase_table[attr][0]*i <= getattr(self, attr) and 
+            getattr(self, attr) <= self.increase_table[attr][3]*i)
+        ]
+    
+    def _gen_index_pair(self, attr: str, increase_counts: list[int]):
+        """上昇回数から、あり得るスコアの一覧を算出する"""
+        indexes:list[tuple[int]] = []
+        l = range(4)
+        for i in increase_counts:
+            indexes.extend(itertools.combinations_with_replacement(l, i))
+        sorted_indexes = sorted(indexes, key = lambda x: sum([self.increase_table[attr][i] for i in x]))
+        print(sorted_indexes)
+        return sorted_indexes
+
     def _calc_by_general_score_logic(self, calc_type: str) -> float:
         if calc_type == 'rated_hp':
             return self.crit_rate * 2 + self.crit_dmg + self.rated_hp
@@ -84,7 +124,9 @@ class TheoreticalArtifactScore:
             self.round_rank[attr],
             ROUND_HALF_UP,
         ))
-        result = getattr(self, attr) / denominator
+        display_value: float | int = getattr(self, attr)
+        inner_value = self._get_inner_option_value(attr, display_value)
+        result = inner_value / denominator
         # print(f'{attr}: {getattr(self, attr)} / {denominator} = {result}')
         return result
 
@@ -172,3 +214,11 @@ if __name__ == '__main__':
     # 各値ごとに確認
     for k in tas.theoretical_value.keys():
         assert tas.calc_theoretical_rate([k])== Decimal('100')
+
+    theoretical_values=dict(
+        crit_rate=13.2
+    )
+    tas = TheoreticalArtifactScore(
+        **theoretical_values
+    )
+    print([len(i) for i in tas._gen_index_pair('fixed_hp', [5, 6])])
