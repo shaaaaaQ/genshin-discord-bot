@@ -6,7 +6,7 @@ import discord
 import requests
 import pyocr
 
-from .theoretical_artifact_score import TheoreticalArtifactScore
+from .artifact_score import ArtifactScore
 
 
 tools = pyocr.get_available_tools()
@@ -210,7 +210,7 @@ class Artifact(commands.Cog):
                 extracted_stats['rated_atk'] = value
             if stat.startswith(t['hp']) and stat.endswith('%'):
                 extracted_stats['rated_hp'] = value
-        score = TheoreticalArtifactScore(**extracted_stats)
+        score = ArtifactScore(**extracted_stats)
         return {
             'crit': (
                 score.calc_general_rate('crit_only'),
