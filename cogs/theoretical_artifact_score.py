@@ -1,45 +1,12 @@
-from decimal import Decimal, ROUND_UP, ROUND_HALF_UP, ROUND_DOWN
-import itertools
+from decimal import Decimal, ROUND_HALF_UP
 
-class TheoreticalArtifactScore:
-    # TODO: 役割が丸かぶりしているので、後でincrease_tableとマージする
-    theoretical_value = {
-        'fixed_hp': 298.75,
-        'fixed_atk': 19.45,
-        'fixed_def': 23.15,
-        'rated_hp': 5.83,
-        'rated_atk': 5.83,
-        'rated_def': 7.29,
-        'crit_dmg': 7.77,
-        'crit_rate': 3.89,
-        'charge_rate': 6.48,
-        'elemental_mastery': 23.31,
-    }
-    increase_table = {
-        'fixed_hp': [209.13, 239.00, 268.88, 298.75],
-        'fixed_atk': [13.62, 15.56, 17.51, 19.45],
-        'fixed_def': [16.20, 18.52, 20.83, 23.15],
-        'rated_hp': [4.08, 4.66, 5.25, 5.83],
-        'rated_atk': [4.08, 4.66, 5.25, 5.83],
-        'rated_def': [5.10, 5.83, 6.56, 7.29],
-        'crit_dmg': [5.44, 6.22, 6.99, 7.77],
-        'crit_rate': [2.72, 3.11, 3.50, 3.89],
-        'charge_rate': [4.53, 5.18, 5.83, 6.48],
-        'elemental_mastery': [16.32, 18.65, 20.98, 23.31],
-    }
+from artifact_constants import ArtifactConstants
 
-    round_rank = {
-        'fixed_hp': '1',
-        'fixed_atk': '1',
-        'fixed_def': '1',
-        'rated_hp': '0.1',
-        'rated_atk': '0.1',
-        'rated_def': '0.1',
-        'crit_dmg': '0.1',
-        'crit_rate': '0.1',
-        'charge_rate': '0.1',
-        'elemental_mastery': '1',
-    }
+
+class ArtifactScore:
+    INCREASE_TABLE = ArtifactConstants.INCREASE_TABLE
+    ROUND_RANK = ArtifactConstants.ROUND_RANK
+    DISPLAY_TO_INTERNAL = ArtifactConstants.calc_display_to_internal()
 
     def __init__(
         self,
@@ -65,32 +32,26 @@ class TheoreticalArtifactScore:
         self.charge_rate = charge_rate
         self.elemental_mastery = elemental_mastery
 
-    def _get_inner_option_value(self, attr: str, value: 'float | int') -> float:
-        """表示値から内部の値を算出する（予定の関数）
-        ### note
-        - 上昇回数算出 → あり得る表示値を二分探索 → 内部の値へマッピング
-        - パフォーマンスが微妙なら ↑ を事前計算しておき、辞書から引く……？とか……？
-        """
-        return value
+    def _quantize(
+        self,
+        value: float,
+        rank: str = '0.1',
+        method: str = ROUND_HALF_UP,
+    ) -> Decimal:
+        return ArtifactConstants.quantize(value, rank, method)
 
-    def _calc_increase_counts(self, attr:str):
-        """表示値から、理論上あり得る上昇回数を算出する"""
-        return [
-            i
-            for i in range(7)
-            if (self.increase_table[attr][0]*i <= getattr(self, attr) and 
-            getattr(self, attr) <= self.increase_table[attr][3]*i)
-        ]
-    
-    def _gen_index_pair(self, attr: str, increase_counts: list[int]):
-        """上昇回数から、あり得るスコアの一覧を算出する"""
-        indexes:list[tuple[int]] = []
-        l = range(4)
-        for i in increase_counts:
-            indexes.extend(itertools.combinations_with_replacement(l, i))
-        sorted_indexes = sorted(indexes, key = lambda x: sum([self.increase_table[attr][i] for i in x]))
-        print(sorted_indexes)
-        return sorted_indexes
+    def _get_inner_option_value(self, attr: str, value: float) -> float:
+        """表示値から内部の値を算出する"""
+        result = value
+        try:
+            result = self.DISPLAY_TO_INTERNAL[attr][value]
+        except KeyError:
+            # スコアが算出できなくなると悲しいのでメッセージを記録して握り潰す
+            print(f'Error occured by mapping DISPLAY_TO_INTERNAL at {attr} {value}')
+
+        print(f'{attr}\'s internal value of {value}: {result}')
+
+        return result
 
     def _calc_by_general_score_logic(self, calc_type: str) -> float:
         if calc_type == 'rated_hp':
@@ -107,9 +68,6 @@ class TheoreticalArtifactScore:
             method=ROUND_HALF_UP,
         )
 
-    def _quantize(self, value: float, rank: str='0.1', method:str = ROUND_DOWN) -> Decimal:
-        return Decimal(value).quantize(Decimal(rank), method)
-
     def _calc_theoretical_rate(
         self, attr: str, initial: int = 1, raises: int = 5
     ) -> float:
@@ -117,17 +75,15 @@ class TheoreticalArtifactScore:
         オプション上昇理論値から見た割合を算出する
 
         現在値 / 1回の上昇量の理論値 * (オプション初期値として扱う値 + オプション上昇回数)
+        
+        誤差を小さくするため、ゲーム表示上の値ではなく、内部の値で算出する
         """
-        # 誤差を小さくするため、ゲーム表示上の値を算出する
-        denominator = float(self._quantize(
-            self.theoretical_value[attr] * (initial + raises),
-            self.round_rank[attr],
-            ROUND_HALF_UP,
-        ))
-        display_value: float | int = getattr(self, attr)
-        inner_value = self._get_inner_option_value(attr, display_value)
+        denominator = self.INCREASE_TABLE[attr][3] * (initial + raises)
+        inner_value = self._get_inner_option_value(attr, float(getattr(self, attr)))
+
         result = inner_value / denominator
-        # print(f'{attr}: {getattr(self, attr)} / {denominator} = {result}')
+
+        print(f'{attr}: {inner_value} / {denominator} = {result}')
         return result
 
     def calc_theoretical_rate(
@@ -138,64 +94,62 @@ class TheoreticalArtifactScore:
         """
         if attrs is None:
             attrs = [
-                attr for attr in self.theoretical_value.keys() if getattr(self, attr)
+                attr for attr in self.INCREASE_TABLE.keys() if getattr(self, attr)
             ]
         rates: list[float] = [
             self._calc_theoretical_rate(attr, initial=len(attrs), raises=raises)
             for attr in attrs
         ]
-        # 表示スコアが四捨五入済みのため、sum(rates)が1を超えることがあるので対処)
-        # また、下振れの対策も兼ねてここの丸めは切り上げとする
-        # TODO: 表示スコア → 内部スコアへの変換ロジックを用いた高精度算出
         return self._quantize(
             min(sum(rates), 1) * 100,
-            rank='1',
-            method=ROUND_UP,
+            rank='0.1',
+            method=ROUND_HALF_UP,
         )
 
 
 if __name__ == '__main__':
     # 理論上最弱聖遺物
-    tas = TheoreticalArtifactScore(
+    tas = ArtifactScore(
         fixed_hp=1046,
         rated_hp=4.1,
         crit_rate=2.7,
         crit_dmg=5.4,
     )
-    # 会心率オプションとしての理論値から見た割合: 12
+    # 会心率オプションとしての理論値から見た割合: 11.7
     print(tas.calc_theoretical_rate(['crit_rate']))
-    # hp固定値が5回伸びた際の理論値から見た割合: 59
+    # hp固定値が5回伸びた際の理論値から見た割合: 58.3
     print(tas.calc_theoretical_rate(['fixed_hp'], 5))
-    # hp固定値を除いた聖遺物としての理論値から見た割合: 27
+    # hp固定値を除いた聖遺物としての理論値から見た割合: 26.2
     print(tas.calc_theoretical_rate(['crit_rate', 'crit_dmg', 'rated_hp']))
-    # 聖遺物としての理論値スコア: 63
+    # 聖遺物としての理論値スコア: 62.2
     print(tas.calc_theoretical_rate())
 
     # 理論上最強聖遺物
-    tas = TheoreticalArtifactScore(
+    tas = ArtifactScore(
         rated_atk=5.8,
         crit_dmg=38.9,
         crit_rate=7.8,
         fixed_def=23
     )
-    # 率ダメ理論値スコア: 100
+    # 率ダメ理論値スコア: 100.0
     print(tas.calc_theoretical_rate(['crit_rate', 'crit_dmg', 'rated_atk']))
-    # トータルスコア: 100
+    # トータルスコア: 100.0
     print(tas.calc_theoretical_rate())
+
     # 一般的な聖遺物スコアが理論値の 60.3であることの確認
     assert tas.calc_general_rate('rated_atk') == Decimal('60.3')
 
     # 切り捨てが多い下振れ算出される理論上最強聖遺物
-    tas = TheoreticalArtifactScore(
+    tas = ArtifactScore(
         charge_rate=19.4, # 6.48 * 3 = 19.44
         crit_dmg=15.5, # 7.77 * 2 = 15.54
         fixed_atk=19, # 19.45
         fixed_def=69, # 23.15 * 3 = 69.45
     )
-    # トータルスコア: 100
+    # トータルスコア: 100.0
     print(tas.calc_theoretical_rate())
 
-    # 理論値で100になることを確認する
+    # 理論値で100.0になることを確認する
     theoretical_values=dict(
         fixed_atk=117,
         rated_atk=35.0,
@@ -208,17 +162,12 @@ if __name__ == '__main__':
         crit_rate=23.3,
         crit_dmg=46.6,
     )
-    tas = TheoreticalArtifactScore(
+    tas = ArtifactScore(
         **theoretical_values
     )
     # 各値ごとに確認
-    for k in tas.theoretical_value.keys():
-        assert tas.calc_theoretical_rate([k])== Decimal('100')
+    for k in tas.INCREASE_TABLE.keys():
+        actual = tas.calc_theoretical_rate([k])
+        print(f'{k}: {actual}')
+        assert actual == Decimal('100')
 
-    theoretical_values=dict(
-        crit_rate=13.2
-    )
-    tas = TheoreticalArtifactScore(
-        **theoretical_values
-    )
-    print([len(i) for i in tas._gen_index_pair('fixed_hp', [5, 6])])
