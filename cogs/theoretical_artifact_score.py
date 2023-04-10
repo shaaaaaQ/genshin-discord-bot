@@ -1,6 +1,6 @@
 from decimal import Decimal, ROUND_HALF_UP
 
-from artifact_constants import ArtifactConstants
+from .artifact_constants import ArtifactConstants
 
 
 class ArtifactScore:
