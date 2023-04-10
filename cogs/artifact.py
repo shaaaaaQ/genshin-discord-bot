@@ -6,7 +6,7 @@ import discord
 import requests
 import pyocr
 
-from .theoretical_artifact_score import ArtifactScore
+from .artifact_score import ArtifactScore
 
 
 tools = pyocr.get_available_tools()
