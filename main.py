@@ -4,7 +4,8 @@ import discord
 import config
 
 cogs = [
-    'cogs.artifact'
+    'cogs.artifact',
+    'cogs.build_card'
 ]
 
 
