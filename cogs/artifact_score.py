@@ -1,6 +1,9 @@
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
+import logging
 
 from .artifact_constants import ArtifactConstants
+
+logger = logging.getLogger(__name__)
 
 
 class ArtifactScore:
@@ -47,9 +50,18 @@ class ArtifactScore:
             result = self.DISPLAY_TO_INTERNAL[attr][value]
         except KeyError:
             # スコアが算出できなくなると悲しいのでメッセージを記録して握り潰す
-            print(f'Error occured by mapping DISPLAY_TO_INTERNAL at {attr} {value}')
+            logger.error(
+                'Error occured by mapping DISPLAY_TO_INTERNAL at %s %s',
+                attr,
+                value,
+            )
 
-        print(f'{attr}\'s internal value of {value}: {result}')
+        logger.debug(
+            '%s\'s internal value of %s: %s',
+            attr,
+            value,
+            result,
+        )
 
         return result
 
@@ -61,7 +73,7 @@ class ArtifactScore:
         if calc_type == 'crit_only':
             return self.crit_rate * 2 + self.crit_dmg
         return 0
-    
+
     def calc_general_rate(self, calc_type: str) -> Decimal:
         return self._quantize(
             self._calc_by_general_score_logic(calc_type),
@@ -75,11 +87,14 @@ class ArtifactScore:
         オプション上昇理論値から見た割合を算出する
 
         現在値 / 1回の上昇量の理論値 * (オプション初期値として扱う値 + オプション上昇回数)
-        
+
         誤差を小さくするため、ゲーム表示上の値ではなく、内部の値で算出する
         """
         denominator = self.INCREASE_TABLE[attr][3] * (initial + raises)
-        inner_value = self._get_inner_option_value(attr, float(getattr(self, attr)))
+        inner_value = self._get_inner_option_value(
+            attr,
+            float(getattr(self, attr)),
+        )
 
         result = inner_value / denominator
 
@@ -97,7 +112,11 @@ class ArtifactScore:
                 attr for attr in self.INCREASE_TABLE.keys() if getattr(self, attr)
             ]
         rates: list[float] = [
-            self._calc_theoretical_rate(attr, initial=len(attrs), raises=raises)
+            self._calc_theoretical_rate(
+                attr,
+                initial=len(attrs),
+                raises=raises,
+            )
             for attr in attrs
         ]
         return self._quantize(
@@ -141,16 +160,16 @@ if __name__ == '__main__':
 
     # 切り捨てが多い下振れ算出される理論上最強聖遺物
     tas = ArtifactScore(
-        charge_rate=19.4, # 6.48 * 3 = 19.44
-        crit_dmg=15.5, # 7.77 * 2 = 15.54
-        fixed_atk=19, # 19.45
-        fixed_def=69, # 23.15 * 3 = 69.45
+        charge_rate=19.4,  # 6.48 * 3 = 19.44
+        crit_dmg=15.5,  # 7.77 * 2 = 15.54
+        fixed_atk=19,  # 19.45
+        fixed_def=69,  # 23.15 * 3 = 69.45
     )
     # トータルスコア: 100.0
     print(tas.calc_theoretical_rate())
 
     # 理論値で100.0になることを確認する
-    theoretical_values=dict(
+    theoretical_values = dict(
         fixed_atk=117,
         rated_atk=35.0,
         fixed_def=139,
@@ -170,4 +189,3 @@ if __name__ == '__main__':
         actual = tas.calc_theoretical_rate([k])
         print(f'{k}: {actual}')
         assert actual == Decimal('100')
-

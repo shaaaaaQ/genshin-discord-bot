@@ -1,14 +1,21 @@
-from discord.ext import commands
+import logging
+from typing import Any
+
 import discord
+from discord import Message
+from discord.ext import commands
 
 import config
+
+logger = logging.getLogger(__name__)
+discord.utils.setup_logging(level=logging.INFO)
 
 cogs = [
     'cogs.artifact'
 ]
 
 
-def get_prefix(bot, message):
+def get_prefix(bot: commands.Bot, message: Message):
     return commands.when_mentioned_or(config.prefix)(bot, message)
 
 
@@ -26,13 +33,17 @@ class Bot(commands.Bot):
             await self.load_extension(cog)
         await self.tree.sync()
 
-    def run(self):
-        super().run(config.token)
+    def run(
+        self,
+        token: str = config.token,
+        **kwargs: Any,
+    ):
+        super().run(token, **kwargs)
 
     async def on_ready(self):
-        print('ready')
+        logger.info('ready')
 
-    async def on_message(self, message):
+    async def on_message(self, message: Message):
         if message.author.bot:
             return
 
