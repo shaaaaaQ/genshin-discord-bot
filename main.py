@@ -51,4 +51,4 @@ class Bot(commands.Bot):
 
 
 if __name__ == '__main__':
-    Bot().run()
+    Bot().run(log_handler=None)
