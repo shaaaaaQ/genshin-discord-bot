@@ -10,7 +10,7 @@ client = EnkaNetworkAPI(lang='jp')
 
 class View(discord.ui.View):
     def __init__(self, characters):
-        super().__init__(timeout=10)
+        super().__init__()
         self.characters = characters
         for i, character in enumerate(characters):
             self.character.add_option(
