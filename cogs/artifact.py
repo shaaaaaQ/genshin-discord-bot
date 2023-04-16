@@ -82,10 +82,7 @@ class Artifact(commands.Cog):
         logger.debug(ocr_text)
         stats: list[str] = []
         for text in ocr_text.splitlines():
-            if (text.startswith('+ ') or
-                text.startswith('* ') or
-                text.startswith('; ') or
-                    text.startswith('・ ')):
+            if text.startswith(('+ ', '* ', '; ', '・ ')):
                 text = '・' + text[2:]
             if text.endswith('%6'):
                 text = text[:-1]
@@ -105,9 +102,9 @@ class Artifact(commands.Cog):
                 extracted_stats['crit_rate'] = value
             if stat.startswith(t['crit_dmg']):
                 extracted_stats['crit_dmg'] = value
-            if stat.startswith(t['atk']) and stat.endswith('%'):
+            if stat.startswith(t['rated_atk']) and stat.endswith('%'):
                 extracted_stats['rated_atk'] = value
-            if stat.startswith(t['hp']) and stat.endswith('%'):
+            if stat.startswith(t['rated_hp']) and stat.endswith('%'):
                 extracted_stats['rated_hp'] = value
         score = ArtifactScore(**extracted_stats)
         return {
