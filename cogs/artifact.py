@@ -68,11 +68,11 @@ class Artifact(commands.Cog):
         """
         await self.proc(ctx, lang, attachment, 'hp')  # type: ignore
 
-    async def proc(self, ctx: Ctx, lang: str, attachment: discord.Attachment, mh: Literal['hp', 'atk', 'crit']):
+    async def proc(self, ctx: Ctx, lang: str, attachment: discord.Attachment, calc_type: Literal['hp', 'atk', 'crit']):
         t = locales[lang]
         url = attachment.url
         stats = self.get_stats(t, url)
-        score, rate = self.calc_score(t, stats)[mh]
+        score, rate = self.calc_score(stats)[calc_type]
         embed = self.create_embed(t, stats, score, rate)
         await ctx.reply(embed=embed)
 
@@ -80,33 +80,32 @@ class Artifact(commands.Cog):
         img = Image.open(BytesIO(requests.get(url).content))  # type: ignore
         ocr_text: str = tools[0].image_to_string(img, t['code'])
         logger.debug(ocr_text)
-        stats: list[str] = []
+        stats: dict[str, float] = {}
         for text in ocr_text.splitlines():
             if text.startswith(('+ ', '* ', '; ', '・ ')):
-                text = '・' + text[2:]
+                text = text[2:]
             if text.endswith('%6'):
                 text = text[:-1]
             if text.startswith('・'):
-                stats.append(text)
+                text = text[1:]
+            for attr, attr_name in t.items():
+                if text.startswith(f'{attr_name}+'):
+                    if attr.startswith('fixed') and text.endswith('%'):
+                        continue
+                    elif attr.startswith('rated') and not text.endswith('%'):
+                        continue
+                    elif attr.startswith(('fixed', 'elemental_mastery')):
+                        stats[attr] = int(self.get_value(text))
+                    else:
+                        stats[attr] = self.get_value(text)
+        logger.debug(stats)
         return stats
 
     def get_value(self, stat: str):
         return float(stat.split('+')[1].replace('%', ''))
 
-    def calc_score(self, t: dict[str, str], stats: list[str]):
-        extracted_stats = {}
-        for stat in stats:
-            stat = stat[1:]
-            value = self.get_value(stat)
-            if stat.startswith(t['crit_rate']):
-                extracted_stats['crit_rate'] = value
-            if stat.startswith(t['crit_dmg']):
-                extracted_stats['crit_dmg'] = value
-            if stat.startswith(t['rated_atk']) and stat.endswith('%'):
-                extracted_stats['rated_atk'] = value
-            if stat.startswith(t['rated_hp']) and stat.endswith('%'):
-                extracted_stats['rated_hp'] = value
-        score = ArtifactScore(**extracted_stats)
+    def calc_score(self, stats: dict[str, float]):
+        score = ArtifactScore(**stats)
         return {
             'crit': (
                 score.calc_general_rate('crit_only'),
@@ -124,10 +123,17 @@ class Artifact(commands.Cog):
             ),
         }
 
-    def create_embed(self, t: dict[str, str], stats: list[str], score: Decimal, rate: Decimal):
+    def create_embed(self, t: dict[str, str], stats: dict[str, float], score: Decimal, rate: Decimal):
         embed = discord.Embed()
+        stats_str: list[str] = []
+        for attr, value in stats.items():
+            if attr.startswith(('fixed', 'elemental_mastery')):
+                stats_str.append(f'{t[attr]}+{value}')
+            else:
+                stats_str.append(f'{t[attr]}+{value}%')
+
         embed.add_field(name='サブステータス',
-                        value='\n'.join(stats), inline=False)
+                        value='\n'.join(stats_str), inline=False)
         embed.add_field(name='スコア', value=score, inline=False)
         embed.add_field(name='理論値比', value=f'{rate}%', inline=False)
         return embed
