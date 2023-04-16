@@ -68,7 +68,34 @@ class Artifact(commands.Cog):
         """
         await self.proc(ctx, lang, attachment, 'hp')  # type: ignore
 
-    async def proc(self, ctx: Ctx, lang: str, attachment: discord.Attachment, calc_type: Literal['hp', 'atk', 'crit']):
+    @commands.hybrid_command(name='def')
+    async def _def(self, ctx: Ctx, attachment: discord.Attachment,
+                   lang: LangConv = 'ja'):  # type: ignore
+        """
+        画像からスコア計算(防御力%)
+        会心率 * 2 + 会心ダメージ + 防御力%
+        """
+        await self.proc(ctx, lang, attachment, 'def')  # type: ignore
+
+    @commands.hybrid_command()
+    async def em(self, ctx: Ctx, attachment: discord.Attachment,
+                 lang: LangConv = 'ja'):  # type: ignore
+        """
+        画像からスコア計算(会心+元素熟知)
+        会心率 * 2 + 会心ダメージ + 元素熟知 * 0.25
+        """
+        await self.proc(ctx, lang, attachment, 'em')  # type: ignore
+
+    @commands.hybrid_command()
+    async def er(self, ctx: Ctx, attachment: discord.Attachment,
+                 lang: LangConv = 'ja'):  # type: ignore
+        """
+        画像からスコア計算(元素チャージ効率)
+        会心率 * 2 + 会心ダメージ + 元素チャージ効率
+        """
+        await self.proc(ctx, lang, attachment, 'er')  # type: ignore
+
+    async def proc(self, ctx: Ctx, lang: str, attachment: discord.Attachment, calc_type: Literal['hp', 'atk', 'def', 'crit', 'em', 'er']):
         t = locales[lang]
         url = attachment.url
         stats = self.get_stats(t, url)
@@ -106,6 +133,7 @@ class Artifact(commands.Cog):
 
     def calc_score(self, stats: dict[str, Any]):
         score = ArtifactScore(**stats)
+        # TODO
         return {
             'crit': (
                 score.calc_general_rate('crit_only'),
@@ -121,6 +149,21 @@ class Artifact(commands.Cog):
                 score.calc_theoretical_rate(
                     ['crit_dmg', 'crit_rate', 'rated_hp']),
             ),
+            'def': (
+                score.calc_general_rate('rated_def'),
+                score.calc_theoretical_rate(
+                    ['crit_dmg', 'crit_rate', 'rated_def']),
+            ),
+            'em': (
+                score.calc_general_rate('em'),
+                score.calc_theoretical_rate(
+                    ['crit_dmg', 'crit_rate', 'elemental_mastery']),
+            ),
+            'er': (
+                score.calc_general_rate('er'),
+                score.calc_theoretical_rate(
+                    ['crit_dmg', 'crit_rate', 'charge_rate']),
+            )
         }
 
     def create_embed(self, t: dict[str, str], stats: dict[str, float], score: Decimal, rate: Decimal):

@@ -70,8 +70,14 @@ class ArtifactScore:
             return self.crit_rate * 2 + self.crit_dmg + self.rated_hp
         if calc_type == 'rated_atk':
             return self.crit_rate * 2 + self.crit_dmg + self.rated_atk
+        if calc_type == 'rated_def':
+            return self.crit_rate * 2 + self.crit_dmg + self.rated_def
         if calc_type == 'crit_only':
             return self.crit_rate * 2 + self.crit_dmg
+        if calc_type == 'em':
+            return self.crit_rate * 2 + self.crit_dmg + self.elemental_mastery * 0.25
+        if calc_type == 'er':
+            return self.crit_rate * 2 + self.crit_dmg + self.charge_rate
         return 0
 
     def calc_general_rate(self, calc_type: str) -> Decimal:
