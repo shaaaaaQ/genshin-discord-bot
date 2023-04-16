@@ -98,7 +98,7 @@ class ArtifactScore:
 
         result = inner_value / denominator
 
-        print(f'{attr}: {inner_value} / {denominator} = {result}')
+        logger.debug(f'{attr}: {inner_value} / {denominator} = {result}')
         return result
 
     def calc_theoretical_rate(
