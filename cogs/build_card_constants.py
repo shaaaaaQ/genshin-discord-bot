@@ -123,7 +123,7 @@ calc_types = [
         'rates': [
             {'type': 'FIGHT_PROP_CRITICAL', 'rate': 2},
             {'type': 'FIGHT_PROP_CRITICAL_HURT', 'rate': 1},
-            {'type': 'FIGHT_PROP_DEFENSE', 'rate': 1}
+            {'type': 'FIGHT_PROP_DEFENSE_PERCENT', 'rate': 1}
         ],
         'label': '防御換算',
         # TODO
