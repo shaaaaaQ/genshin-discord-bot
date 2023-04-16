@@ -10,11 +10,13 @@ from discord.ext import commands
 from PIL import Image
 
 from .artifact_locales import locales
-from .artifact_score import ArtifactScore
+from .artifact_constants import AttrKeys
+from .artifact_score import ArtifactScore, G_CalcType
 
 tools: list[Any] = pyocr.get_available_tools()
 
 Ctx = commands.Context[Any]
+CalcType = Literal['hp', 'atk', 'def', 'crit', 'em', 'er']
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,17 @@ class LangConv(commands.Converter[str]):
 class Artifact(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+        # calc_score メソッドで使用
+        self.command_calc_map: dict[CalcType, tuple[G_CalcType, list[AttrKeys]]]= {
+            # 算出ロジックタイプ: (一般スコアロジック名, 論理値比算出対象属性一覧)
+            'crit': ('crit_only', ['crit_dmg', 'crit_rate']),
+            'atk': ('rated_atk', ['crit_dmg', 'crit_rate', 'rated_atk']),
+            'hp': ('rated_hp', ['crit_dmg', 'crit_rate', 'rated_hp']),
+            'def': ('rated_def', ['crit_dmg', 'crit_rate', 'rated_def']),
+            'em': ('em', ['crit_dmg', 'crit_rate', 'elemental_mastery']),
+            'er': ('er', ['crit_dmg', 'crit_rate', 'charge_rate']),
+        }
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: Ctx, error: Exception):
@@ -95,15 +108,15 @@ class Artifact(commands.Cog):
         """
         await self.proc(ctx, lang, attachment, 'er')  # type: ignore
 
-    async def proc(self, ctx: Ctx, lang: str, attachment: discord.Attachment, calc_type: Literal['hp', 'atk', 'def', 'crit', 'em', 'er']):
+    async def proc(self, ctx: Ctx, lang: str, attachment: discord.Attachment, calc_type: CalcType):
         t = locales[lang]
         url = attachment.url
         stats = self.get_stats(t, url)
-        score, rate = self.calc_score(stats)[calc_type]
+        score, rate = self.calc_score(stats, calc_type)
         embed = self.create_embed(t, stats, score, rate)
         await ctx.reply(embed=embed)
 
-    def get_stats(self, t: dict[str, str], url: str) -> list[str]:
+    def get_stats(self, t: dict[str, str], url: str) -> dict[str, Any]:
         img = Image.open(BytesIO(requests.get(url).content))  # type: ignore
         ocr_text: str = tools[0].image_to_string(img, t['code'])
         logger.debug(ocr_text)
@@ -131,40 +144,15 @@ class Artifact(commands.Cog):
     def get_value(self, stat: str):
         return float(stat.split('+')[1].replace('%', ''))
 
-    def calc_score(self, stats: dict[str, Any]):
+    def calc_score(self, stats: dict[str, Any], calc_type: CalcType) -> tuple[Decimal, Decimal]:
         score = ArtifactScore(**stats)
-        # TODO
-        return {
-            'crit': (
-                score.calc_general_rate('crit_only'),
-                score.calc_theoretical_rate(['crit_dmg', 'crit_rate']),
-            ),
-            'atk': (
-                score.calc_general_rate('rated_atk'),
-                score.calc_theoretical_rate(
-                    ['crit_dmg', 'crit_rate', 'rated_atk']),
-            ),
-            'hp': (
-                score.calc_general_rate('rated_hp'),
-                score.calc_theoretical_rate(
-                    ['crit_dmg', 'crit_rate', 'rated_hp']),
-            ),
-            'def': (
-                score.calc_general_rate('rated_def'),
-                score.calc_theoretical_rate(
-                    ['crit_dmg', 'crit_rate', 'rated_def']),
-            ),
-            'em': (
-                score.calc_general_rate('em'),
-                score.calc_theoretical_rate(
-                    ['crit_dmg', 'crit_rate', 'elemental_mastery']),
-            ),
-            'er': (
-                score.calc_general_rate('er'),
-                score.calc_theoretical_rate(
-                    ['crit_dmg', 'crit_rate', 'charge_rate']),
-            )
-        }
+                
+        logic_name, target_attrs = self.command_calc_map[calc_type]
+
+        return (
+            score.calc_general_rate(logic_name),
+            score.calc_theoretical_rate(target_attrs),
+        )
 
     def create_embed(self, t: dict[str, str], stats: dict[str, float], score: Decimal, rate: Decimal):
         embed = discord.Embed()
