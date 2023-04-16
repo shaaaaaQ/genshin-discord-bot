@@ -80,7 +80,7 @@ class Artifact(commands.Cog):
         img = Image.open(BytesIO(requests.get(url).content))  # type: ignore
         ocr_text: str = tools[0].image_to_string(img, t['code'])
         logger.debug(ocr_text)
-        stats: dict[str, float] = {}
+        stats: dict[str, Any] = {}
         for text in ocr_text.splitlines():
             if text.startswith(('+ ', '* ', '; ', '・ ')):
                 text = text[2:]
@@ -104,7 +104,7 @@ class Artifact(commands.Cog):
     def get_value(self, stat: str):
         return float(stat.split('+')[1].replace('%', ''))
 
-    def calc_score(self, stats: dict[str, float]):
+    def calc_score(self, stats: dict[str, Any]):
         score = ArtifactScore(**stats)
         return {
             'crit': (
