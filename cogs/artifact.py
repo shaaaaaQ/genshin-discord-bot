@@ -1,68 +1,74 @@
+import logging
+from decimal import Decimal
 from io import BytesIO
+from typing import Any, Literal
 
+import discord
+import pyocr
+import requests
 from discord.ext import commands
 from PIL import Image
-import discord
-import requests
-import pyocr
 
-from .artifact_score import ArtifactScore
 from .artifact_locales import locales
+from .artifact_score import ArtifactScore
+
+tools: list[Any] = pyocr.get_available_tools()
+
+Ctx = commands.Context[Any]
+
+logger = logging.getLogger(__name__)
 
 
-tools = pyocr.get_available_tools()
-
-
-class LangConv(commands.Converter):
-    async def convert(self, ctx, lang):
-        if lang not in locales.keys():
+class LangConv(commands.Converter[str]):
+    async def convert(self, ctx: Ctx, argument: str) -> str:
+        if argument not in locales.keys():
             await ctx.reply('その言語対応してない')
-            lang = 'ja'
-        return lang
+            argument = 'ja'
+        return argument
 
 
 class Artifact(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx: Ctx, error: Exception):
         if isinstance(error, commands.MissingRequiredAttachment):
             await ctx.reply('添付ファイルがない')
         elif isinstance(error, commands.CommandNotFound):
             pass
         else:
             await ctx.reply('error')
-            print(error)
+            logger.error(error)
 
     @commands.hybrid_command()
-    async def crit(self, ctx, attachment: discord.Attachment,
-                   lang: LangConv = 'ja'):
+    async def crit(self, ctx: Ctx, attachment: discord.Attachment,
+                   lang: LangConv = 'ja'):  # type: ignore
         """
         画像からスコア計算(会心のみ)
         会心率 * 2 + 会心ダメージ
         """
-        await self.proc(ctx, lang, attachment, 'crit')
+        await self.proc(ctx, lang, attachment, 'crit')  # type: ignore
 
     @commands.hybrid_command()
-    async def atk(self, ctx, attachment: discord.Attachment,
-                  lang: LangConv = 'ja'):
+    async def atk(self, ctx: Ctx, attachment: discord.Attachment,
+                  lang: LangConv = 'ja'):  # type: ignore
         """
         画像からスコア計算(攻撃力%)
         会心率 * 2 + 会心ダメージ + 攻撃力%
         """
-        await self.proc(ctx, lang, attachment, 'atk')
+        await self.proc(ctx, lang, attachment, 'atk')  # type: ignore
 
     @commands.hybrid_command()
-    async def hp(self, ctx, attachment: discord.Attachment,
-                 lang: LangConv = 'ja'):
+    async def hp(self, ctx: Ctx, attachment: discord.Attachment,
+                 lang: LangConv = 'ja'):  # type: ignore
         """
         画像からスコア計算(HP%)
         会心率 * 2 + 会心ダメージ + HP%
         """
-        await self.proc(ctx, lang, attachment, 'hp')
+        await self.proc(ctx, lang, attachment, 'hp')  # type: ignore
 
-    async def proc(self, ctx, lang, attachment, mh):
+    async def proc(self, ctx: Ctx, lang: str, attachment: discord.Attachment, mh: Literal['hp', 'atk', 'crit']):
         t = locales[lang]
         url = attachment.url
         stats = self.get_stats(t, url)
@@ -70,12 +76,12 @@ class Artifact(commands.Cog):
         embed = self.create_embed(t, stats, score, rate)
         await ctx.reply(embed=embed)
 
-    def get_stats(self, t, url):
-        img = Image.open(BytesIO(requests.get(url).content))
-        text = tools[0].image_to_string(img, t['code'])
-        print(text)
-        stats = []
-        for text in text.splitlines():
+    def get_stats(self, t: dict[str, str], url: str) -> list[str]:
+        img = Image.open(BytesIO(requests.get(url).content))  # type: ignore
+        ocr_text: str = tools[0].image_to_string(img, t['code'])
+        logger.debug(ocr_text)
+        stats: list[str] = []
+        for text in ocr_text.splitlines():
             if (text.startswith('+ ') or
                 text.startswith('* ') or
                 text.startswith('; ') or
@@ -87,10 +93,10 @@ class Artifact(commands.Cog):
                 stats.append(text)
         return stats
 
-    def get_value(self, stat):
+    def get_value(self, stat: str):
         return float(stat.split('+')[1].replace('%', ''))
 
-    def calc_score(self, t, stats):
+    def calc_score(self, t: dict[str, str], stats: list[str]):
         extracted_stats = {}
         for stat in stats:
             stat = stat[1:]
@@ -121,7 +127,7 @@ class Artifact(commands.Cog):
             ),
         }
 
-    def create_embed(self, t, stats, score, rate):
+    def create_embed(self, t: dict[str, str], stats: list[str], score: Decimal, rate: Decimal):
         embed = discord.Embed()
         embed.add_field(name='サブステータス',
                         value='\n'.join(stats), inline=False)
@@ -130,5 +136,5 @@ class Artifact(commands.Cog):
         return embed
 
 
-async def setup(bot):
+async def setup(bot: commands.Bot):
     await bot.add_cog(Artifact(bot))

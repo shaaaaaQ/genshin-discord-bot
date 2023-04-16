@@ -1,6 +1,6 @@
-from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
 import itertools
 import statistics
+from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 
 
 class ArtifactConstants:
@@ -34,27 +34,31 @@ class ArtifactConstants:
         pass
 
     @staticmethod
-    def quantize(value: float, rank: str='0.1', method:str = ROUND_DOWN) -> Decimal:
+    def quantize(value: float, rank: str = '0.1', method: str = ROUND_DOWN) -> Decimal:
         return Decimal(value).quantize(Decimal(rank), method)
 
     @staticmethod
     def _calc_display_to_internal(attr: str):
         """キー毎に、表示値から、内部値を算出する"""
-        indexes:list[tuple[int]] = []
+        indexes: list[tuple[int]] = []
         # 上昇値のインデックスである 0 - 3 の配列から、 重複を含みかつ並べ替えて一致しない i 個のペアを生成する
         increase_index = range(4)
         for i in range(7):
-            indexes.extend(itertools.combinations_with_replacement(increase_index, i))
+            indexes.extend(
+                itertools.combinations_with_replacement(increase_index, i)
+            )
 
         # 内部値の配列に持ち替える
-        display_to_internal_values: dict[float,list[float]]= {}
+        display_to_internal_values: dict[float, list[float]] = {}
         for x in indexes:
             disp = float(ArtifactConstants.quantize(
                 sum([ArtifactConstants.INCREASE_TABLE[attr][i] for i in x]),
                 ArtifactConstants.ROUND_RANK[attr],
                 ROUND_HALF_UP,
             ))
-            internal = sum([ArtifactConstants.INCREASE_TABLE[attr][i] for i in x])
+            internal = sum(
+                [ArtifactConstants.INCREASE_TABLE[attr][i] for i in x]
+            )
 
             if disp in display_to_internal_values:
                 display_to_internal_values[disp].append(internal)
@@ -75,7 +79,7 @@ class ArtifactConstants:
     @staticmethod
     def calc_display_to_internal():
         """表示値から、内部値を算出し、辞書に整形する
-        
+
         :example:
         ```
         >>> ArtifactConstants.calc_display_to_internal()
@@ -90,5 +94,3 @@ class ArtifactConstants:
         for k in ArtifactConstants.ROUND_RANK.keys():
             result[k] = ArtifactConstants._calc_display_to_internal(k)
         return result
-            
-
