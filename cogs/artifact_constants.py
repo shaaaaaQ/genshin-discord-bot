@@ -1,10 +1,23 @@
 import itertools
 import statistics
 from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
+from typing import Literal
 
+AttrKeys = Literal[
+    'fixed_hp',
+    'fixed_atk',
+    'fixed_def',
+    'rated_hp',
+    'rated_atk',
+    'rated_def',
+    'crit_dmg',
+    'crit_rate',
+    'charge_rate',
+    'elemental_mastery',
+]
 
 class ArtifactConstants:
-    INCREASE_TABLE = {
+    INCREASE_TABLE: dict[AttrKeys, list[float]] = {
         'fixed_hp': [209.13, 239.00, 268.88, 298.75],
         'fixed_atk': [13.62, 15.56, 17.51, 19.45],
         'fixed_def': [16.20, 18.52, 20.83, 23.15],
@@ -17,7 +30,7 @@ class ArtifactConstants:
         'elemental_mastery': [16.32, 18.65, 20.98, 23.31],
     }
 
-    ROUND_RANK = {
+    ROUND_RANK: dict[AttrKeys, str] = {
         'fixed_hp': '1',
         'fixed_atk': '1',
         'fixed_def': '1',
@@ -38,7 +51,7 @@ class ArtifactConstants:
         return Decimal(value).quantize(Decimal(rank), method)
 
     @staticmethod
-    def _calc_display_to_internal(attr: str):
+    def _calc_display_to_internal(attr: AttrKeys):
         """キー毎に、表示値から、内部値を算出する"""
         indexes: list[tuple[int]] = []
         # 上昇値のインデックスである 0 - 3 の配列から、 重複を含みかつ並べ替えて一致しない i 個のペアを生成する
@@ -90,7 +103,7 @@ class ArtifactConstants:
         }
         ```
         """
-        result: dict[str, dict[float, float]] = {}
+        result: dict[AttrKeys, dict[float, float]] = {}
         for k in ArtifactConstants.ROUND_RANK.keys():
             result[k] = ArtifactConstants._calc_display_to_internal(k)
         return result

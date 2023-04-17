@@ -1,7 +1,10 @@
 from decimal import ROUND_HALF_UP, Decimal
 import logging
+from typing import Literal
 
-from .artifact_constants import ArtifactConstants
+from .artifact_constants import ArtifactConstants, AttrKeys
+
+G_CalcType = Literal['rated_hp', 'rated_atk', 'rated_def', 'crit_only', 'em', 'er']
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +46,7 @@ class ArtifactScore:
     ) -> Decimal:
         return ArtifactConstants.quantize(value, rank, method)
 
-    def _get_inner_option_value(self, attr: str, value: float) -> float:
+    def _get_inner_option_value(self, attr: AttrKeys, value: float) -> float:
         """表示値から内部の値を算出する"""
         result = value
         try:
@@ -65,7 +68,7 @@ class ArtifactScore:
 
         return result
 
-    def _calc_by_general_score_logic(self, calc_type: str) -> float:
+    def _calc_by_general_score_logic(self, calc_type: G_CalcType) -> float:
         if calc_type == 'rated_hp':
             return self.crit_rate * 2 + self.crit_dmg + self.rated_hp
         if calc_type == 'rated_atk':
@@ -80,14 +83,14 @@ class ArtifactScore:
             return self.crit_rate * 2 + self.crit_dmg + self.charge_rate
         return 0
 
-    def calc_general_rate(self, calc_type: str) -> Decimal:
+    def calc_general_rate(self, calc_type: G_CalcType) -> Decimal:
         return self._quantize(
             self._calc_by_general_score_logic(calc_type),
             method=ROUND_HALF_UP,
         )
 
     def _calc_theoretical_rate(
-        self, attr: str, initial: int = 1, raises: int = 5
+        self, attr: AttrKeys, initial: int = 1, raises: int = 5
     ) -> float:
         """
         オプション上昇理論値から見た割合を算出する
@@ -108,7 +111,7 @@ class ArtifactScore:
         return result
 
     def calc_theoretical_rate(
-        self, attrs: 'list[str] | None' = None, raises: int = 5
+        self, attrs: 'list[AttrKeys] | None' = None, raises: int = 5
     ) -> Decimal:
         """
         選択したオプションと、上昇回数から想定される理論値から見た割合を算出する
