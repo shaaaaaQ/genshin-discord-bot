@@ -70,19 +70,20 @@ class View(discord.ui.View):
                 delete_after=5
             )
             return
-        dot = 1
-        await self.message.edit(view=None, content=f'生成中{"."*dot}')
+
         character = self.characters[int(self.character.values[0])]
         calc_type = calc_types[int(self.calc_type.values[0])]
+
         with ProcessPoolExecutor() as executor:
             future = executor.submit(
                 Generator(character).generate, **calc_type)
             # 終わるまで待つときってこれでいいの？
+            dot = 1
             while not future.done():
+                await self.message.edit(view=None, content=f'生成中{"."*dot}')
                 dot += 1
                 if dot > 3:
                     dot = 1
-                await self.message.edit(view=None, content=f'生成中{"."*dot}')
                 await asyncio.sleep(1)
             image = future.result()
         f = BytesIO()
