@@ -70,7 +70,8 @@ class View(discord.ui.View):
                 delete_after=5
             )
             return
-        await self.message.edit(view=None, content='生成中...')
+        dot = 1
+        await self.message.edit(view=None, content=f'生成中{"."*dot}')
         character = self.characters[int(self.character.values[0])]
         calc_type = calc_types[int(self.calc_type.values[0])]
         with ProcessPoolExecutor() as executor:
@@ -78,6 +79,10 @@ class View(discord.ui.View):
                 Generator(character).generate, **calc_type)
             # 終わるまで待つときってこれでいいの？
             while not future.done():
+                dot += 1
+                if dot > 3:
+                    dot = 1
+                await self.message.edit(view=None, content=f'生成中{"."*dot}')
                 await asyncio.sleep(1)
             image = future.result()
         f = BytesIO()
