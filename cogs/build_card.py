@@ -1,4 +1,6 @@
 from io import BytesIO
+from concurrent.futures import ProcessPoolExecutor
+import asyncio
 from discord.ext import commands
 from artifacter_image_gen import Generator
 from enkanetwork import EnkaNetworkAPI
@@ -70,7 +72,13 @@ class View(discord.ui.View):
         await self.message.edit(view=None, content='生成中')
         character = self.characters[int(self.character.values[0])]
         calc_type = calc_types[int(self.calc_type.values[0])]
-        image = Generator(character).generate(**calc_type)
+        with ProcessPoolExecutor() as executor:
+            future = executor.submit(
+                Generator(character).generate, **calc_type)
+            # 終わるまで待つときってこれでいいの？
+            while not future.done():
+                await asyncio.sleep(1)
+            image = future.result()
         f = BytesIO()
         image.save(f, format='png')
         f.seek(0)
