@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 discord.utils.setup_logging(level=logging.INFO)
 
 cogs = [
-    'cogs.artifact'
+    'cogs.artifact',
+    'cogs.build_card'
 ]
 
 
