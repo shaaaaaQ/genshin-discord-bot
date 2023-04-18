@@ -5,7 +5,7 @@ calc_types = [
             {'type': 'FIGHT_PROP_CRITICAL_HURT', 'rate': 1}
         ],
         'label': '会心のみ',
-        # TODO
+        # TODO 理論値が違うからここの数値を変えるか、ほかのサイトとかBotと合わせたい
         'point_refer': {
             'Total': {
                 'SS': 220,
@@ -253,6 +253,6 @@ prop_id_ja = {
     'FIGHT_PROP_DEFENSE_PERCENT': '防御%',
     'FIGHT_PROP_CRITICAL': '会心率',
     'FIGHT_PROP_CRITICAL_HURT': '会心ダメージ',
-    'FIGHT_PROP_CHARGE_EFFICIENCY': '元素チャ効率',
+    'FIGHT_PROP_CHARGE_EFFICIENCY': '元素チャージ効率',
     'FIGHT_PROP_ELEMENT_MASTERY': '元素熟知'
 }

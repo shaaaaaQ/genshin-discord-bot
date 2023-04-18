@@ -17,6 +17,7 @@ class View(discord.ui.View):
         for i, character in enumerate(characters):
             self.character.add_option(
                 label=character.name,
+                description=f'Lv.{character.level}',
                 value=i
             )
         for i, calc_type in enumerate(calc_types):
@@ -69,7 +70,7 @@ class View(discord.ui.View):
                 delete_after=5
             )
             return
-        await self.message.edit(view=None, content='生成中')
+        await self.message.edit(view=None, content='生成中...')
         character = self.characters[int(self.character.values[0])]
         calc_type = calc_types[int(self.calc_type.values[0])]
         with ProcessPoolExecutor() as executor:
@@ -97,7 +98,16 @@ class BuildCard(commands.Cog):
         async with client:
             data = await client.fetch_user(uid)
 
-        view = View(data.characters)
+        player = data.player
+        characters = data.characters
+
+        if not characters:
+            if not player.nickname:
+                await ctx.reply('error')
+            else:
+                await ctx.reply(f'キャラクターが公開されてない\n(プレイヤー名: {player.nickname})')
+            return
+        view = View(characters)
         view.message = await ctx.reply(view=view)
 
 
