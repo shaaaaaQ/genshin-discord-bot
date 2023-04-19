@@ -12,7 +12,7 @@ client = EnkaNetworkAPI(lang='jp')
 
 class View(discord.ui.View):
     def __init__(self, characters):
-        super().__init__()
+        super().__init__(timeout=8)
         self.characters = characters
         for i, character in enumerate(characters):
             self.character.add_option(
@@ -37,7 +37,8 @@ class View(discord.ui.View):
             )
 
     async def on_timeout(self):
-        await self.message.edit(view=None, content='Timeout')
+        if not self.message.attachments:
+            await self.message.edit(view=None, content='Timeout')
 
     @discord.ui.select(
         cls=discord.ui.Select,
@@ -77,7 +78,6 @@ class View(discord.ui.View):
         with ProcessPoolExecutor() as executor:
             future = executor.submit(
                 Generator(character).generate, **calc_type)
-            # 終わるまで待つときってこれでいいの？
             dot = 1
             while not future.done():
                 await self.message.edit(view=None, content=f'生成中{"."*dot}')
@@ -89,7 +89,7 @@ class View(discord.ui.View):
         f = BytesIO()
         image.save(f, format='png')
         f.seek(0)
-        await self.message.edit(
+        self.message = await self.message.edit(
             content=None,
             attachments=[discord.File(f, 'card.png')]
         )
