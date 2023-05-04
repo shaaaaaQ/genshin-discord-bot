@@ -22,13 +22,11 @@ class View(discord.ui.View):
             )
         for i, calc_type in enumerate(calc_types):
             tmp = []
-            for r in calc_type['rates']:
-                type_ = r['type']
-                rate = r['rate']
+            for prop_id, rate in calc_type['rates'].items():
                 if rate == 1:
-                    tmp.append(prop_id_ja[type_])
+                    tmp.append(prop_id_ja[prop_id])
                 else:
-                    tmp.append(f'{prop_id_ja[type_]} * {rate}')
+                    tmp.append(f'{prop_id_ja[prop_id]} * {rate}')
             desc = ' + '.join(tmp)
             self.calc_type.add_option(
                 label=calc_type['label'],
