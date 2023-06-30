@@ -37,3 +37,10 @@ prefix = '-'
 |コマンド|
 |-|
 |build \<UID>|
+
+### プロフィール見るやつ
+![](images/command_profile_0.png)
+![](images/command_profile_1.png)
+|コマンド|
+|-|
+|profile \<UID>|
