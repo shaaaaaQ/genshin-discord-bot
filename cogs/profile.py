@@ -143,7 +143,7 @@ def create_character_embed(data, character: CharacterInfo):
     )
 
     texts = [
-        f'\u001b[1;36m{weapon.detail.name}',
+        f'\u001b[1;33m{weapon.detail.name}',
         f'\u001b[0mLevel: \u001b[36m{weapon.level}',
         f'\u001b[0m精錬ランク: \u001b[36m{weapon.refinement}',
         '',
