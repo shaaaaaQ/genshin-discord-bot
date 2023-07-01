@@ -111,9 +111,12 @@ def create_character_embed(data, character: CharacterInfo):
         icon_url=data.player.avatar.icon.url
     )
     embed.set_thumbnail(url=character.image.icon.url)
-    embed.add_field(
-        name='ステータス',
-        value=f'''
+
+    embeds = []
+
+    embeds.append({
+        'name': 'ステータス',
+        'value': f'''
 ```ansi
 \u001b[0mHP: \u001b[36m{stats.FIGHT_PROP_MAX_HP.to_rounded()}
 \u001b[0m攻撃力: \u001b[36m{stats.FIGHT_PROP_CUR_ATTACK.to_rounded()}
@@ -125,7 +128,7 @@ def create_character_embed(data, character: CharacterInfo):
 \u001b[0m{bonus}: \u001b[36m{bonuses[bonus]}%
 ```
         '''
-    )
+    })
 
     texts = []
     for i, name in enumerate(['通常攻撃', '元素スキル', '元素爆発']):
@@ -133,14 +136,10 @@ def create_character_embed(data, character: CharacterInfo):
         texts.append(
             f'\u001b[0m{name}: \u001b[{"34" if skill.is_boosted else "36" }m{skill.level}')
     text = '\n'.join(texts)
-    embed.add_field(
-        name='天賦',
-        value=f'''
-```ansi
-{text}
-```
-        '''
-    )
+    embeds.append({
+        'name': '天賦',
+        'value': f'```ansi\n{text}\n```'
+    })
 
     texts = [
         f'\u001b[1;33m{weapon.detail.name}',
@@ -154,14 +153,10 @@ def create_character_embed(data, character: CharacterInfo):
         texts.append(
             f'\u001b[0m{substat.name}: \u001b[36m{substat.value}{"%" if substat.prop_id in percent_stats else ""}')
     text = '\n'.join(texts)
-    embed.add_field(
-        name='武器',
-        value=f'''
-```ansi
-{text}
-```
-        '''
-    )
+    embeds.append({
+        'name': '武器',
+        'value': f'```ansi\n{text}\n```'
+    })
 
     for artifact in artifacts:
         mainstat = artifact.detail.mainstats
@@ -176,14 +171,19 @@ def create_character_embed(data, character: CharacterInfo):
                 texts.append(
                     f'\u001b[0m{stat.name}: \u001b[36m{stat.value}{"%" if stat.prop_id in percent_stats else ""}')
         text = '\n'.join(texts)
-        embed.add_field(
-            name=ja[artifact.detail.artifact_type.value],
-            value=f'''
-```ansi
-{text}
-```
-            '''
-        )
+        embeds.append({
+            'name': ja[artifact.detail.artifact_type.value],
+            'value': f'```ansi\n{text}\n```'
+        })
+
+    for i, e in enumerate(embeds):
+        embed.add_field(**e)
+        if not i == 0 and i % 2 != 0:
+            embed.add_field(
+                name='\u200b',
+                value='\u200b'
+            )
+
     return embed
 
 
