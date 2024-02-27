@@ -1,6 +1,7 @@
 discord.py
 pillow
 requests
-enkanetwork.py
+git+https://github.com/0kq-github/EnkaNetwork.py
 pyocr
 git+https://github.com/shaaaaaQ/ArtifacterImageGen.git
+pydantic < 2

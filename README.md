@@ -12,6 +12,9 @@ source venv/bin/activate.fish
 pip install -r requirements.txt
 # 設定ファイル
 vim config.py
+
+# 実行
+python main.py
 ```
 config.pyの中身
 ```python
@@ -38,9 +41,9 @@ prefix = '-'
 |-|
 |build \<UID>|
 
-### プロフィール見るやつ
+<!-- ### プロフィール見るやつ
 ![](images/command_profile_0.png)
 ![](images/command_profile_1.png)
 |コマンド|
 |-|
-|profile \<UID>|
+|profile \<UID>| -->
