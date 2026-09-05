@@ -32,7 +32,8 @@ prefix = '-'
 |er|会心率\*2 + 会心ダメージ + 元素チャージ効率|
 
 ### ビルドカード作成
-[FuroBath/ArtifacterImageGen](https://github.com/FuroBath/ArtifacterImageGen)を[ちょっと改良したやつ](https://github.com/shaaaaaQ/ArtifacterImageGen)をつかって画像を生成
+[enka.py](https://github.com/seriaati/enka-py) でショーケースを取得し、
+[ArtifacterImageGen](https://github.com/shaaaaaQ/ArtifacterImageGen) で画像を生成
 ![](images/command_build.png)
 |コマンド|
 |-|

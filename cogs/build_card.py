@@ -1,24 +1,24 @@
 from io import BytesIO
-from concurrent.futures import ProcessPoolExecutor
 import asyncio
-from discord.ext import commands
-from artifacter_image_gen import Generator
-from enkanetwork import EnkaNetworkAPI
-import discord
-from .build_card_constants import calc_types, prop_id_ja
 
-client = EnkaNetworkAPI(lang='jp')
+import discord
+import enka
+from discord.ext import commands
+
+from artifacter_image_gen import Generator
+
+from .build_card_constants import calc_types, prop_id_ja
 
 
 class View(discord.ui.View):
-    def __init__(self, characters):
+    def __init__(self, characters: list[enka.gi.Character]):
         super().__init__()
         self.characters = characters
         for i, character in enumerate(characters):
             self.character.add_option(
                 label=character.name,
                 description=f'Lv.{character.level}',
-                value=i
+                value=str(i)
             )
         for i, calc_type in enumerate(calc_types):
             tmp = []
@@ -31,7 +31,7 @@ class View(discord.ui.View):
             self.calc_type.add_option(
                 label=calc_type['label'],
                 description=desc,
-                value=i
+                value=str(i)
             )
 
     async def on_timeout(self):
@@ -70,20 +70,20 @@ class View(discord.ui.View):
             )
             return
 
+        await interaction.response.defer()
         character = self.characters[int(self.character.values[0])]
         calc_type = calc_types[int(self.calc_type.values[0])]
 
-        with ProcessPoolExecutor() as executor:
-            future = executor.submit(
-                Generator(character).generate, **calc_type)
-            dot = 1
-            while not future.done():
-                await self.message.edit(view=None, content=f'生成中{"."*dot}')
-                dot += 1
-                if dot > 3:
-                    dot = 1
-                await asyncio.sleep(1)
-            image = future.result()
+        task = asyncio.create_task(
+            asyncio.to_thread(Generator(character).generate, **calc_type)
+        )
+        dot = 1
+        while not task.done():
+            await self.message.edit(view=None, content=f'生成中{"."*dot}')
+            dot = dot % 3 + 1
+            await asyncio.sleep(1)
+        image = await task
+
         f = BytesIO()
         image.save(f, format='png')
         f.seek(0)
@@ -99,8 +99,8 @@ class BuildCard(commands.Cog):
 
     @commands.hybrid_command()
     async def build(self, ctx, uid: int):
-        async with client:
-            data = await client.fetch_user(uid)
+        async with enka.GenshinClient(enka.gi.Language.JAPANESE) as client:
+            data = await client.fetch_showcase(uid)
 
         player = data.player
         characters = data.characters
