@@ -1,5 +1,6 @@
 from io import BytesIO
 import asyncio
+import logging
 
 import discord
 import enka
@@ -8,6 +9,9 @@ from discord.ext import commands
 from artifacter_image_gen import Generator
 
 from .build_card_constants import calc_types, prop_id_ja
+
+
+logger = logging.getLogger(__name__)
 
 
 class View(discord.ui.View):
@@ -93,12 +97,50 @@ class View(discord.ui.View):
         )
 
 
+class UIDModal(discord.ui.Modal, title='UID入力'):
+    uid = discord.ui.TextInput(
+        label='原神UID',
+        placeholder='UIDを入力してください',
+        min_length=9,
+        max_length=10
+    )
+
+    def __init__(self, cog: 'BuildCard'):
+        super().__init__()
+        self.cog = cog
+
+    async def on_submit(self, interaction: discord.Interaction):
+        uid = self.uid.value.strip()
+        if not uid.isascii() or not uid.isdecimal():
+            await interaction.response.send_message(
+                'UIDは半角数字で入力してください。',
+                ephemeral=True
+            )
+            return
+
+        await interaction.response.defer()
+        try:
+            view, error = await self.cog.create_view(int(uid))
+        except Exception:
+            logger.exception('UID %s のデータ取得に失敗しました', uid)
+            await interaction.followup.send(
+                'データの取得に失敗しました。UIDを確認して、もう一度お試しください。',
+                ephemeral=True
+            )
+            return
+
+        if view is None:
+            await interaction.followup.send(error or 'error', ephemeral=True)
+            return
+
+        view.message = await interaction.followup.send(view=view, wait=True)
+
+
 class BuildCard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command()
-    async def build(self, ctx, uid: int):
+    async def create_view(self, uid: int) -> tuple[View | None, str | None]:
         async with enka.GenshinClient(enka.gi.Language.JAPANESE) as client:
             data = await client.fetch_showcase(uid)
 
@@ -107,11 +149,25 @@ class BuildCard(commands.Cog):
 
         if not characters:
             if not player.nickname:
-                await ctx.reply('error')
+                return None, 'error'
+            return None, f'キャラクターが公開されてない\n(プレイヤー名: {player.nickname})'
+
+        return View(characters), None
+
+    @commands.hybrid_command()
+    async def build(self, ctx, uid: int | None = None):
+        if uid is None:
+            if ctx.interaction:
+                await ctx.interaction.response.send_modal(UIDModal(self))
             else:
-                await ctx.reply(f'キャラクターが公開されてない\n(プレイヤー名: {player.nickname})')
+                await ctx.reply(f'UIDを指定してください。例: `{ctx.prefix}build 123456789`')
             return
-        view = View(characters)
+
+        view, error = await self.create_view(uid)
+        if view is None:
+            await ctx.reply(error or 'error')
+            return
+
         view.message = await ctx.reply(view=view)
 
 

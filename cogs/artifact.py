@@ -127,6 +127,10 @@ class Artifact(commands.Cog):
         await self.proc(ctx, lang, attachment, 'er')  # type: ignore
 
     async def proc(self, ctx: Ctx, lang: str, attachment: discord.Attachment, calc_type: CalcType):
+        # PaddleOCRの初回モデル読み込みを含め、3秒以上かかる処理に備えて
+        # Slash Commandへ先に応答する。プレフィックスコマンドでは何もしない。
+        await ctx.defer()
+
         t = locales[lang]
         url = attachment.url
         reader = self.ocr_readers.setdefault(
