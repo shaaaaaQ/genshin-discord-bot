@@ -1,7 +1,9 @@
 discord.py
+numpy
+paddleocr==3.7.0
+paddlepaddle==3.2.0
 pillow
 requests
 git+https://github.com/0kq-github/EnkaNetwork.py
-pyocr
 git+https://github.com/shaaaaaQ/ArtifacterImageGen.git
 pydantic < 2

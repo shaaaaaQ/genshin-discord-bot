@@ -1,10 +1,10 @@
+import asyncio
 import logging
 from decimal import Decimal
 from io import BytesIO
 from typing import Any, Literal
 
 import discord
-import pyocr
 import requests
 from discord.ext import commands
 from PIL import Image
@@ -12,18 +12,35 @@ from PIL import Image
 from .artifact_locales import locales
 from .artifact_constants import AttrKeys
 from .artifact_score import ArtifactScore, G_CalcType
-
-tools: list[Any] = pyocr.get_available_tools()
+from .paddle_ocr import PaddleOCRReader
 
 Ctx = commands.Context[Any]
 CalcType = Literal['hp', 'atk', 'def', 'crit', 'em', 'er']
+
+PADDLE_LANGS = {
+    'en': 'en',
+    'ru': 'ru',
+    'vi': 'vi',
+    'th': 'th',
+    'pt': 'pt',
+    'ko': 'korean',
+    'ja': 'japan',
+    'id': 'id',
+    'fr': 'fr',
+    'es': 'es',
+    'de': 'de',
+    'zh-TW': 'chinese_cht',
+    'zh-CN': 'ch',
+    'it': 'it',
+    'tr': 'tr',
+}
 
 logger = logging.getLogger(__name__)
 
 
 class LangConv(commands.Converter[str]):
     async def convert(self, ctx: Ctx, argument: str) -> str:
-        if argument not in locales.keys():
+        if argument not in locales:
             await ctx.reply('その言語対応してない')
             argument = 'ja'
         return argument
@@ -32,6 +49,7 @@ class LangConv(commands.Converter[str]):
 class Artifact(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.ocr_readers: dict[str, PaddleOCRReader] = {}
 
         # calc_score メソッドで使用
         self.command_calc_map: dict[CalcType, tuple[G_CalcType, list[AttrKeys]]]= {
@@ -111,23 +129,34 @@ class Artifact(commands.Cog):
     async def proc(self, ctx: Ctx, lang: str, attachment: discord.Attachment, calc_type: CalcType):
         t = locales[lang]
         url = attachment.url
-        stats = self.get_stats(t, url)
+        reader = self.ocr_readers.setdefault(
+            lang,
+            PaddleOCRReader(PADDLE_LANGS[lang]),
+        )
+        stats = await asyncio.to_thread(self.get_stats, t, url, reader)
         score, rate = self.calc_score(stats, calc_type)
         embed = self.create_embed(t, stats, score, rate)
         await ctx.reply(embed=embed)
 
-    def get_stats(self, t: dict[str, str], url: str) -> dict[str, Any]:
-        img = Image.open(BytesIO(requests.get(url).content))  # type: ignore
-        ocr_text: str = tools[0].image_to_string(img, t['code'])
-        logger.debug(ocr_text)
+    def get_stats(
+        self,
+        t: dict[str, str],
+        url: str,
+        reader: PaddleOCRReader,
+    ) -> dict[str, Any]:
+        response = requests.get(url, timeout=20)
+        response.raise_for_status()
+        with Image.open(BytesIO(response.content)) as img:
+            ocr_lines = reader.read_lines(img)
+        logger.debug('PaddleOCR result: %s', ocr_lines)
+        return self.parse_stats(t, ocr_lines)
+
+    def parse_stats(self, t: dict[str, str], ocr_lines: list[str]) -> dict[str, Any]:
         stats: dict[str, Any] = {}
-        for text in ocr_text.splitlines():
-            if text.startswith(('+ ', '* ', '; ', '・ ')):
-                text = text[2:]
-            if text.endswith('%6'):
-                text = text[:-1]
-            if text.startswith('・'):
-                text = text[1:]
+        for text in ocr_lines:
+            text = text.strip().lstrip('・·• ')
+            # 日本語モデルが繁体字を返す場合がある。
+            text = text.replace('攻擊力', '攻撃力')
             for attr, attr_name in t.items():
                 if text.startswith(f'{attr_name}+'):
                     if attr.startswith('fixed') and text.endswith('%'):
@@ -142,7 +171,7 @@ class Artifact(commands.Cog):
         return stats
 
     def get_value(self, stat: str):
-        return float(stat.split('+')[1].replace('%', ''))
+        return float(stat.split('+')[1].replace('%', '').replace(',', ''))
 
     def calc_score(self, stats: dict[str, Any], calc_type: CalcType) -> tuple[Decimal, Decimal]:
         score = ArtifactScore(**stats)
