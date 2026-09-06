@@ -19,6 +19,14 @@ token = 'ここにtoken'
 prefix = '-'
 ```
 
+## TODO
+bot
+- .env
+- cogsの下を整理
+- error専用cog
+- レート制限
+- forgetuid コマンドでuidを削除できるように
+
 ## 機能
 ### 幻境のステージ情報
 ![](images/command_stage.png)
