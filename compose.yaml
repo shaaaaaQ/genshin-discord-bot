@@ -9,13 +9,13 @@ services:
     volumes:
       - ./config.py:/app/config.py:ro
       # PaddleOCRのモデルを保持し、再起動時の再ダウンロードを防ぐ。
-      - paddle-cache:/home/bot/.paddlex
-      - paddle-data:/home/bot/.paddleocr
-      - artifacter-cache:/home/bot/.cache/artifacter-image-gen
+      - paddle-cache:/root/.paddlex
+      - paddle-data:/root/.paddleocr
+      - artifacter-cache:/root/.cache/artifacter-image-gen
       - bot-data:/app/data
     environment:
       TZ: Asia/Tokyo
-      ARTIFACTER_IMAGE_GEN_CACHE_DIR: /home/bot/.cache/artifacter-image-gen
+      ARTIFACTER_IMAGE_GEN_CACHE_DIR: /root/.cache/artifacter-image-gen
 
 volumes:
   paddle-cache:
