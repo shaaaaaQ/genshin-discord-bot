@@ -1,0 +1,19 @@
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: genshin-discord-bot:local
+    restart: unless-stopped
+    init: true
+    volumes:
+      - ./config.py:/app/config.py:ro
+      # PaddleOCRのモデルを保持し、再起動時の再ダウンロードを防ぐ。
+      - paddle-cache:/home/bot/.paddlex
+      - paddle-data:/home/bot/.paddleocr
+    environment:
+      TZ: Asia/Tokyo
+
+volumes:
+  paddle-cache:
+  paddle-data:

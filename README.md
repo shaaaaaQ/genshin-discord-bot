@@ -20,6 +20,17 @@ prefix = '-'
 ```
 
 ## 機能
+### 幻境のステージ情報
+![](images/command_stage.png)
+[Octavia API](https://github.com/kj415j45/octavia) から、幻境の情報を取得して表示します。
+
+|コマンド|例（prefix が `-` の場合）|
+|-|-|
+|stage \<GUID> [サーバー]|`-stage 29191333005`|
+|サーバーを指定|`-stage 29191333005 os_asia`|
+
+指定可能なサーバー: `os_asia`, `os_usa`, `os_euro`, `os_cht`, `cn_gf01`, `cn_qd01`
+
 ### 画像からスコアを計算する
 ![](images/command_atk.png)
 |コマンド||

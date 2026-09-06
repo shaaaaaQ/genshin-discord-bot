@@ -13,6 +13,7 @@ discord.utils.setup_logging(level=logging.INFO)
 cogs = [
     'cogs.artifact',
     'cogs.build_card',
+    'cogs.stage',
     # 'cogs.profile'
 ]
 
