@@ -22,6 +22,7 @@ prefix = '-'
 ## 機能
 ### 幻境のステージ情報
 ![](images/command_stage.png)
+
 [Octavia API](https://github.com/kj415j45/octavia) から、幻境の情報を取得して表示します。
 
 |コマンド|例（prefix が `-` の場合）|
