@@ -6,6 +6,7 @@ from discord import Message
 from discord.ext import commands
 
 import config
+from cogs.application_emojis import sync_application_emojis
 
 logger = logging.getLogger(__name__)
 discord.utils.setup_logging(level=logging.INFO)
@@ -14,7 +15,7 @@ cogs = [
     'cogs.artifact',
     'cogs.build_card',
     'cogs.stage',
-    # 'cogs.profile'
+    'cogs.profile',
 ]
 
 
@@ -32,6 +33,7 @@ class Bot(commands.Bot):
         )
 
     async def setup_hook(self):
+        await sync_application_emojis(self)
         for cog in cogs:
             await self.load_extension(cog)
         await self.tree.sync()

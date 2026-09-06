@@ -50,9 +50,14 @@ prefix = '-'
 |-|
 |build \<UID>|
 
-<!-- ### プロフィール見るやつ
-![](images/command_profile_0.png)
-![](images/command_profile_1.png)
+### プロフィール表示
+
 |コマンド|
 |-|
-|profile \<UID>| -->
+|profile \<UID>|
+
+## 免責事項
+
+本プロジェクトは非公式のファンプロジェクトです。
+
+HoYoverseおよびCOGNOSPHEREとの提携・承認・後援関係はありません。原神および関連する名称、画像、その他の素材に関する権利は、それぞれの権利者に帰属します。

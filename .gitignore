@@ -3,3 +3,4 @@
 /.enka_py
 __pycache__
 config.py
+/emojis/*.png

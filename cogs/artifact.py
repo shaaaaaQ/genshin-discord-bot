@@ -64,6 +64,9 @@ class Artifact(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: Ctx, error: Exception):
+        if ctx.command is not None and ctx.command.has_error_handler():
+            return
+
         if isinstance(error, commands.MissingRequiredAttachment):
             await ctx.reply('添付ファイルがない')
         elif isinstance(error, commands.CommandNotFound):
