@@ -7,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from .application_emojis import get_application_emoji
+from .user_uids import get_user_uid, save_user_uid
 
 
 logger = logging.getLogger(__name__)
@@ -258,8 +259,18 @@ class Profile(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command(description='原神の公開プロフィールを表示します')
-    @app_commands.describe(uid='原神のUID')
-    async def profile(self, ctx: commands.Context, uid: str):
+    @app_commands.describe(uid='原神のUID（省略すると前回のUIDを使用）')
+    async def profile(self, ctx: commands.Context, uid: str | None = None):
+        if uid is None:
+            uid = await get_user_uid(ctx.author.id)
+
+        if uid is None:
+            await ctx.reply(
+                f'UIDを指定してください。例: `{ctx.prefix}profile 123456789`',
+                mention_author=False,
+            )
+            return
+
         uid = uid.strip()
         if not uid.isascii() or not uid.isdecimal() or len(uid) not in (9, 10):
             await ctx.reply('UIDは9～10桁の半角数字で入力してください。', mention_author=False)
@@ -284,6 +295,7 @@ class Profile(commands.Cog):
             await ctx.reply('プロフィールの表示中にエラーが発生しました。')
             return
 
+        await save_user_uid(ctx.author.id, uid)
         view = ProfileView(data, ctx.author.id) if data.characters else None
         message = await ctx.reply(
             embed=create_player_embed(data),

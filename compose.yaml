@@ -11,9 +11,14 @@ services:
       # PaddleOCRのモデルを保持し、再起動時の再ダウンロードを防ぐ。
       - paddle-cache:/home/bot/.paddlex
       - paddle-data:/home/bot/.paddleocr
+      - artifacter-cache:/home/bot/.cache/artifacter-image-gen
+      - bot-data:/app/data
     environment:
       TZ: Asia/Tokyo
+      ARTIFACTER_IMAGE_GEN_CACHE_DIR: /home/bot/.cache/artifacter-image-gen
 
 volumes:
   paddle-cache:
   paddle-data:
+  artifacter-cache:
+  bot-data:

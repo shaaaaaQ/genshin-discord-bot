@@ -4,11 +4,13 @@ import logging
 
 import discord
 import enka
+from discord import app_commands
 from discord.ext import commands
 
 from artifacter_image_gen import Generator
 
 from .build_card_constants import calc_types, prop_id_ja
+from .user_uids import get_user_uid, save_user_uid
 
 
 logger = logging.getLogger(__name__)
@@ -120,7 +122,7 @@ class UIDModal(discord.ui.Modal, title='UID入力'):
 
         await interaction.response.defer()
         try:
-            view, error = await self.cog.create_view(int(uid))
+            view, error = await self.cog.create_view(uid)
         except Exception:
             logger.exception('UID %s のデータ取得に失敗しました', uid)
             await interaction.followup.send(
@@ -129,6 +131,7 @@ class UIDModal(discord.ui.Modal, title='UID入力'):
             )
             return
 
+        await save_user_uid(interaction.user.id, uid)
         if view is None:
             await interaction.followup.send(error or 'error', ephemeral=True)
             return
@@ -140,7 +143,7 @@ class BuildCard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def create_view(self, uid: int) -> tuple[View | None, str | None]:
+    async def create_view(self, uid: str) -> tuple[View | None, str | None]:
         async with enka.GenshinClient(enka.gi.Language.JAPANESE) as client:
             data = await client.fetch_showcase(uid)
 
@@ -155,7 +158,11 @@ class BuildCard(commands.Cog):
         return View(characters), None
 
     @commands.hybrid_command()
-    async def build(self, ctx, uid: int | None = None):
+    @app_commands.describe(uid='原神のUID（省略すると前回のUIDを使用）')
+    async def build(self, ctx, uid: str | None = None):
+        if uid is None:
+            uid = await get_user_uid(ctx.author.id)
+
         if uid is None:
             if ctx.interaction:
                 await ctx.interaction.response.send_modal(UIDModal(self))
@@ -163,7 +170,13 @@ class BuildCard(commands.Cog):
                 await ctx.reply(f'UIDを指定してください。例: `{ctx.prefix}build 123456789`')
             return
 
+        uid = uid.strip()
+        if not uid.isascii() or not uid.isdecimal() or len(uid) not in (9, 10):
+            await ctx.reply('UIDは9～10桁の半角数字で入力してください。')
+            return
+
         view, error = await self.create_view(uid)
+        await save_user_uid(ctx.author.id, uid)
         if view is None:
             await ctx.reply(error or 'error')
             return

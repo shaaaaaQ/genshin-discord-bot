@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 
 import aiohttp
@@ -7,15 +8,24 @@ import discord
 
 logger = logging.getLogger(__name__)
 EMOJI_DIRECTORY = Path(__file__).resolve().parent.parent / 'emojis'
-EMOJI_BASE_URL = 'https://enka.network/ui/'
+EMOJI_CACHE_DIRECTORY = EMOJI_DIRECTORY / '.cache'
 MAX_EMOJI_BYTES = 256 * 1024
-EMOJI_FILES = {
-    'stygian_easy': 'UI_LeyLineChallenge_Medal_1.png',
-    'stygian_normal': 'UI_LeyLineChallenge_Medal_2.png',
-    'stygian_hard': 'UI_LeyLineChallenge_Medal_3.png',
-    'stygian_master': 'UI_LeyLineChallenge_Medal_4.png',
-    'stygian_extra': 'UI_LeyLineChallenge_Medal_5.png',
-    'stygian_ultimate': 'UI_LeyLineChallenge_Medal_6.png',
+
+
+@dataclass(frozen=True)
+class EmojiAsset:
+    filename: str
+    url: str | None = None
+
+
+EMOJI_ASSETS = {
+    f'stygian_{name}': EmojiAsset(
+        filename=f'UI_LeyLineChallenge_Medal_{index}.png',
+        url=f'https://enka.network/ui/UI_LeyLineChallenge_Medal_{index}.png',
+    )
+    for index, name in enumerate(
+        ('easy', 'normal', 'hard', 'master', 'extra', 'ultimate'), start=1
+    )
 }
 
 _application_emojis: dict[str, discord.Emoji] = {}
@@ -27,32 +37,47 @@ def get_application_emoji(name: str) -> str:
     return str(emoji) if emoji is not None else ''
 
 
-async def load_emoji_image(session: aiohttp.ClientSession, filename: str) -> bytes | None:
-    path = EMOJI_DIRECTORY / filename
-    if path.is_file():
+async def load_emoji_image(
+    session: aiohttp.ClientSession,
+    asset: EmojiAsset,
+) -> bytes | None:
+    local_path = EMOJI_DIRECTORY / asset.filename
+    if local_path.is_file():
         try:
-            return path.read_bytes()
+            return local_path.read_bytes()
         except OSError:
-            logger.exception('Application Emoji素材の読み込みに失敗しました: %s', path)
+            logger.exception('Application Emoji素材の読み込みに失敗しました: %s', local_path)
 
-    url = f'{EMOJI_BASE_URL}{filename}'
+    if asset.url is None:
+        logger.warning('Application Emoji素材がありません: %s', local_path)
+        return None
+
+    cache_path = EMOJI_CACHE_DIRECTORY / asset.filename
+    if cache_path.is_file():
+        try:
+            return cache_path.read_bytes()
+        except OSError:
+            logger.exception('Application Emojiキャッシュの読み込みに失敗しました: %s', cache_path)
+
     try:
-        async with session.get(url) as response:
+        async with session.get(asset.url) as response:
             response.raise_for_status()
             image = await response.read()
     except (aiohttp.ClientError, TimeoutError):
-        logger.exception('Application Emoji素材の取得に失敗しました: %s', url)
+        logger.exception('Application Emoji素材の取得に失敗しました: %s', asset.url)
         return None
 
     if not image.startswith(b'\x89PNG\r\n\x1a\n') or len(image) > MAX_EMOJI_BYTES:
-        logger.error('Application Emoji素材の形式またはサイズが不正です: %s', url)
+        logger.error('Application Emoji素材の形式またはサイズが不正です: %s', asset.url)
         return None
 
     try:
-        EMOJI_DIRECTORY.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(image)
+        EMOJI_CACHE_DIRECTORY.mkdir(parents=True, exist_ok=True)
+        cache_path.write_bytes(image)
     except OSError:
-        logger.warning('Application Emoji素材を保存できませんでした: %s', path, exc_info=True)
+        logger.warning(
+            'Application Emoji素材を保存できませんでした: %s', cache_path, exc_info=True
+        )
 
     return image
 
@@ -70,11 +95,11 @@ async def sync_application_emojis(client: discord.Client) -> None:
 
     timeout = aiohttp.ClientTimeout(total=15)
     async with aiohttp.ClientSession(timeout=timeout) as session:
-        for name, filename in EMOJI_FILES.items():
+        for name, asset in EMOJI_ASSETS.items():
             if name in existing:
                 continue
 
-            image = await load_emoji_image(session, filename)
+            image = await load_emoji_image(session, asset)
             if image is None:
                 continue
 

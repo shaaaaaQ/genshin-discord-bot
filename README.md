@@ -48,13 +48,15 @@ prefix = '-'
 ![](images/command_build.png)
 |コマンド|
 |-|
-|build \<UID>|
+|build [UID]|
 
 ### プロフィール表示
 
 |コマンド|
 |-|
-|profile \<UID>|
+|profile [UID]|
+
+`build` と `profile` で指定したUIDはDiscordユーザーごとに保存され、次回から省略できます。
 
 ## 免責事項
 
