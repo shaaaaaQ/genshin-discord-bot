@@ -15,6 +15,7 @@ services:
       - bot-data:/app/data
     environment:
       TZ: Asia/Tokyo
+      OCTAVIA_API_URL: https://octavia.ericha.dev
       ARTIFACTER_IMAGE_GEN_CACHE_DIR: /root/.cache/artifacter-image-gen
 
 volumes:

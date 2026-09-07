@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from typing import Literal
 from urllib.parse import urlencode
 
@@ -8,11 +9,9 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .stage_locales import STAGE_CATEGORIES_JA, STAGE_TAGS_JA, STAGE_TYPES_JA
-
-
 logger = logging.getLogger(__name__)
-BASE_URL = 'https://octavia.kj415j45.space'
+DEFAULT_BASE_URL = 'https://octavia.kj415j45.space'
+BASE_URL = (os.getenv('OCTAVIA_API_URL') or DEFAULT_BASE_URL).rstrip('/')
 REGIONS = {
     'os_asia': 'Asia',
     'os_usa': 'America',
@@ -78,9 +77,9 @@ def create_stage_embed(data):
         field('参加人数', f'{minimum}人' if minimum == maximum else f'{minimum}～{maximum}人')
     else:
         field('参加人数', players.get('str'))
-    field('ジャンル', STAGE_TYPES_JA.get(meta.get('type'), meta.get('type')))
-    field('カテゴリ', STAGE_CATEGORIES_JA.get(meta.get('category'), meta.get('category')))
-    field('タグ', ' / '.join(STAGE_TAGS_JA.get(tag, tag) for tag in meta.get('tags') or []))
+    field('ジャンル', meta.get('type'))
+    field('カテゴリ', meta.get('category'))
+    field('タグ', ' / '.join(meta.get('tags') or []))
     # The live API returns formatted strings, despite the numeric OpenAPI schema.
     field('人気度', meta.get('hotScore'))
     field('好評率', meta.get('goodRate'))
