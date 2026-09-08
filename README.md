@@ -1,31 +1,38 @@
 ## 動かし方
 ```bash
 cd genshin-discord-bot
+
 # venv(やらなくてもいい)
 python -m venv venv
 source venv/bin/activate.fish
+
 # パッケージのインストール
 pip install -r requirements.txt
+
 # 設定ファイル
-vim config.py
+cp .env.example .env
+vim .env
 
 # 実行
 python main.py
 ```
 
-config.pyの中身
-```python
-token = 'ここにtoken'
-prefix = '-'
-```
+もしくはDocker
 
 ## TODO
 bot
-- .env
 - レート制限
 - forgetuid コマンドでuidを削除できるように
 
 ## 機能
+### 交換コード一覧
+
+[hoyoverse-api](https://github.com/torikushiii/hoyoverse-api) から、現在利用できる原神の交換コードと報酬を取得して表示します。
+
+|コマンド|例（prefix が `-` の場合）|
+|-|-|
+|codes|`-codes`|
+
 ### 幻境のステージ情報
 ![](images/command_stage.png)
 

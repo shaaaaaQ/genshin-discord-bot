@@ -13,5 +13,7 @@ images
 README.md
 LICENSE
 config.py
+.env
+.env.*
 compose*.yaml
 Dockerfile*

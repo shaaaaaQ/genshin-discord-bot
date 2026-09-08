@@ -6,8 +6,9 @@ services:
     image: genshin-discord-bot:local
     restart: unless-stopped
     init: true
+    env_file:
+      - .env
     volumes:
-      - ./config.py:/app/config.py:ro
       # PaddleOCRのモデルを保持し、再起動時の再ダウンロードを防ぐ。
       - paddle-cache:/root/.paddlex
       - paddle-data:/root/.paddleocr
@@ -15,7 +16,6 @@ services:
       - bot-data:/app/data
     environment:
       TZ: Asia/Tokyo
-      OCTAVIA_API_URL: https://octavia.ericha.dev
       ARTIFACTER_IMAGE_GEN_CACHE_DIR: /root/.cache/artifacter-image-gen
 
 volumes:

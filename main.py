@@ -1,11 +1,11 @@
 import logging
-from typing import Any
+import os
 
 import discord
 from discord import Message
 from discord.ext import commands
+from dotenv import load_dotenv
 
-import config
 from services.application_emojis import sync_application_emojis
 
 logger = logging.getLogger(__name__)
@@ -15,13 +15,14 @@ cogs = [
     'cogs.errors',
     'cogs.artifact',
     'cogs.build_card',
+    'cogs.codes',
     'cogs.stage',
     'cogs.profile',
 ]
 
 
 def get_prefix(bot: commands.Bot, message: Message):
-    return commands.when_mentioned_or(config.prefix)(bot, message)
+    return commands.when_mentioned_or(os.getenv('COMMAND_PREFIX', '-'))(bot, message)
 
 
 class Bot(commands.Bot):
@@ -39,13 +40,6 @@ class Bot(commands.Bot):
             await self.load_extension(cog)
         await self.tree.sync()
 
-    def run(
-        self,
-        token: str = config.token,
-        **kwargs: Any,
-    ):
-        super().run(token, **kwargs)
-
     async def on_ready(self):
         logger.info('ready')
 
@@ -57,4 +51,8 @@ class Bot(commands.Bot):
 
 
 if __name__ == '__main__':
-    Bot().run(log_handler=None)
+    load_dotenv()
+    token = os.getenv('DISCORD_TOKEN')
+    if not token:
+        raise SystemExit('DISCORD_TOKEN を環境変数または .env に設定してください。')
+    Bot().run(token, log_handler=None)

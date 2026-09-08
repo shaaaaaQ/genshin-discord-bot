@@ -3,5 +3,8 @@
 /.enka_py
 __pycache__
 config.py
+.env
+.env.*
+!.env.example
 /emojis/.cache/
 /data/

@@ -1,4 +1,5 @@
 discord.py
+python-dotenv
 aiohttp>=3.7.4,<4
 numpy
 paddleocr==3.7.0
