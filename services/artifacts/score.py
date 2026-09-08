@@ -2,7 +2,7 @@ from decimal import ROUND_HALF_UP, Decimal
 import logging
 from typing import Literal
 
-from .artifact_constants import ArtifactConstants, AttrKeys
+from .constants import ArtifactConstants, AttrKeys
 
 G_CalcType = Literal['rated_hp', 'rated_atk', 'rated_def', 'crit_only', 'em', 'er']
 

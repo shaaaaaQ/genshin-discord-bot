@@ -7,10 +7,9 @@ import enka
 from discord import app_commands
 from discord.ext import commands
 
-from artifacter_image_gen import Generator
-
-from .build_card_constants import calc_types, prop_id_ja
-from .user_uids import get_user_uid, save_user_uid
+from services.build_cards.constants import calc_types, prop_id_ja
+from services.build_cards.service import fetch_characters, generate_card
+from services.user_uids import get_user_uid, save_user_uid
 
 
 logger = logging.getLogger(__name__)
@@ -80,9 +79,7 @@ class View(discord.ui.View):
         character = self.characters[int(self.character.values[0])]
         calc_type = calc_types[int(self.calc_type.values[0])]
 
-        task = asyncio.create_task(
-            asyncio.to_thread(Generator(character).generate, **calc_type)
-        )
+        task = asyncio.create_task(generate_card(character, calc_type))
         dot = 1
         while not task.done():
             await self.message.edit(view=None, content=f'生成中{"."*dot}')
@@ -144,22 +141,16 @@ class BuildCard(commands.Cog):
         self.bot = bot
 
     async def create_view(self, uid: str) -> tuple[View | None, str | None]:
-        async with enka.GenshinClient(enka.gi.Language.JAPANESE) as client:
-            data = await client.fetch_showcase(uid)
-
-        player = data.player
-        characters = data.characters
-
-        if not characters:
-            if not player.nickname:
-                return None, 'error'
-            return None, f'キャラクターが公開されてない\n(プレイヤー名: {player.nickname})'
-
-        return View(characters), None
+        characters, error = await fetch_characters(uid)
+        return (View(characters), None) if characters else (None, error)
 
     @commands.hybrid_command()
     @app_commands.describe(uid='原神のUID（省略すると前回のUIDを使用）')
     async def build(self, ctx, uid: str | None = None):
+        """公開キャラクターからビルドカードを作成します。
+
+        UIDを省略すると、前回使用したUIDを利用します。
+        """
         if uid is None:
             uid = await get_user_uid(ctx.author.id)
 

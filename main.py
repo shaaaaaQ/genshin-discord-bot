@@ -6,12 +6,13 @@ from discord import Message
 from discord.ext import commands
 
 import config
-from cogs.application_emojis import sync_application_emojis
+from services.application_emojis import sync_application_emojis
 
 logger = logging.getLogger(__name__)
 discord.utils.setup_logging(level=logging.INFO)
 
 cogs = [
+    'cogs.errors',
     'cogs.artifact',
     'cogs.build_card',
     'cogs.stage',
