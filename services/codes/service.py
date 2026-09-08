@@ -7,6 +7,8 @@ from urllib.parse import urlencode
 import aiohttp
 import discord
 
+from .locales import localize_reward
+
 
 logger = logging.getLogger(__name__)
 DEFAULT_API_URL = 'https://api.ennead.cc/mihoyo'
@@ -114,7 +116,7 @@ def create_codes_embeds(codes: list[RedemptionCode]) -> list[discord.Embed]:
     page_chars = 100
     pages: list[list[RedemptionCode]] = []
     for entry in codes:
-        rewards = ' / '.join(entry.rewards) or '報酬情報なし'
+        rewards = ' / '.join(map(localize_reward, entry.rewards)) or '報酬情報なし'
         entry_chars = len(entry.code[:256]) + min(len(rewards), 960) + 80
         if page and (len(page) == 25 or page_chars + entry_chars > 5500):
             pages.append(page)
@@ -131,7 +133,10 @@ def create_codes_embeds(codes: list[RedemptionCode]) -> list[discord.Embed]:
             url=REDEEM_URL,
         )
         for entry in page:
-            rewards = ' / '.join(entry.rewards) or '報酬情報なし'
+            rewards = (
+                ' / '.join(map(localize_reward, entry.rewards))
+                or '報酬情報なし'
+            )
             if len(rewards) > 960:
                 rewards = rewards[:959] + '…'
             embed.add_field(

@@ -23,15 +23,9 @@ python main.py
 bot
 - レート制限
 - forgetuid コマンドでuidを削除できるように
+- コード追加通知(1時間おきチェック？)
 
 ## 機能
-### 交換コード一覧
-
-[hoyoverse-api](https://github.com/torikushiii/hoyoverse-api) から、現在利用できる原神の交換コードと報酬を取得して表示します。
-
-|コマンド|例（prefix が `-` の場合）|
-|-|-|
-|codes|`-codes`|
 
 ### 幻境のステージ情報
 ![](images/command_stage.png)
@@ -72,8 +66,18 @@ bot
 
 `build` と `profile` で指定したUIDはDiscordユーザーごとに保存され、次回から省略できます。
 
+### 交換コード一覧
+
+[hoyoverse-api](https://github.com/torikushiii/hoyoverse-api) から、現在利用できる原神の交換コードと報酬を取得して表示します。
+
+|コマンド|例（prefix が `-` の場合）|
+|-|-|
+|codes|`-codes`|
+
 ## 免責事項
 
 本プロジェクトは非公式のファンプロジェクトです。
 
 HoYoverseおよびCOGNOSPHEREとの提携・承認・後援関係はありません。原神および関連する名称、画像、その他の素材に関する権利は、それぞれの権利者に帰属します。
+
+これらの第三者に帰属する名称、画像、その他の素材は、本プロジェクトに適用されるUnlicenseの対象には含まれません。
