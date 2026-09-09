@@ -1,11 +1,11 @@
 import asyncio
 import logging
 import sqlite3
-from pathlib import Path
+
+from services.database import DATABASE_PATH
 
 
 logger = logging.getLogger(__name__)
-DATABASE_PATH = Path(__file__).resolve().parent.parent / 'data' / 'user_settings.sqlite3'
 
 
 def _connect() -> sqlite3.Connection:

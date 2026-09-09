@@ -13,7 +13,7 @@ from .locales import localize_reward
 logger = logging.getLogger(__name__)
 DEFAULT_API_URL = 'https://api.ennead.cc/mihoyo'
 API_URL = (os.getenv('HOYOVERSE_API_URL') or DEFAULT_API_URL).rstrip('/')
-REDEEM_URL = 'https://genshin.hoyoverse.com/en/gift'
+REDEEM_URL = 'https://genshin.hoyoverse.com/ja/gift'
 
 
 class CodesError(Exception):
@@ -104,7 +104,7 @@ class CodesClient:
 def create_codes_embeds(codes: list[RedemptionCode]) -> list[discord.Embed]:
     if not codes:
         embed = discord.Embed(
-            title='原神の交換コード',
+            title='交換コード',
             description='現在利用できる交換コードはありません。',
             colour=discord.Colour.gold(),
         )
@@ -128,7 +128,7 @@ def create_codes_embeds(codes: list[RedemptionCode]) -> list[discord.Embed]:
 
     for index, page in enumerate(pages):
         embed = discord.Embed(
-            title='原神の交換コード' if index == 0 else '原神の交換コード（続き）',
+            title='交換コード' if index == 0 else '交換コード（続き）',
             colour=discord.Colour.gold(),
             url=REDEEM_URL,
         )

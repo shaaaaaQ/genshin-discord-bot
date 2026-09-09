@@ -23,7 +23,6 @@ python main.py
 bot
 - レート制限
 - forgetuid コマンドでuidを削除できるように
-- コード追加通知(1時間おきチェック？)
 
 ## 機能
 
@@ -73,6 +72,12 @@ bot
 |コマンド|例（prefix が `-` の場合）|
 |-|-|
 |codes|`-codes`|
+|codesnotify status|`-codesnotify`|
+|codesnotify set \<チャンネル>|`-codesnotify set #交換コード`|
+|codesnotify remove|`-codesnotify remove`|
+
+サーバー管理者だけが `codesnotify` で通知先を設定・確認・削除できます。通知先を設定すると、1時間おきに交換コードを確認し、
+新しいコードが追加されたときだけ通知します。`status` で現在の通知先を確認し、`remove` で通知を解除できます。
 
 ## 免責事項
 
