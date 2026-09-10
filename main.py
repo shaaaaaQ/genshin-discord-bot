@@ -16,6 +16,7 @@ cogs = [
     'cogs.artifact',
     'cogs.build_card',
     'cogs.codes',
+    'cogs.gacha',
     'cogs.stage',
     'cogs.profile',
 ]

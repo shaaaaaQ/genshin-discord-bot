@@ -18,14 +18,51 @@ class EmojiAsset:
     url: str | None = None
 
 
+ELEMENT_EMOJI_ASSETS = {
+    'anemo': EmojiAsset(
+        filename='UI_Buff_Element_Wind.png',
+        url='https://gi.yatta.moe/assets/UI/UI_Buff_Element_Wind.png',
+    ),
+    'cryo': EmojiAsset(
+        filename='UI_Buff_Element_Ice.png',
+        url='https://gi.yatta.moe/assets/UI/UI_Buff_Element_Ice.png',
+    ),
+    'dendro': EmojiAsset(
+        filename='UI_Buff_Element_Grass.png',
+        url='https://gi.yatta.moe/assets/UI/UI_Buff_Element_Grass.png',
+    ),
+    'electro': EmojiAsset(
+        filename='UI_Buff_Element_Electric.png',
+        url='https://gi.yatta.moe/assets/UI/UI_Buff_Element_Electric.png',
+    ),
+    'geo': EmojiAsset(
+        filename='UI_Buff_Element_Rock.png',
+        url='https://gi.yatta.moe/assets/UI/UI_Buff_Element_Rock.png',
+    ),
+    'hydro': EmojiAsset(
+        filename='UI_Buff_Element_Water.png',
+        url='https://gi.yatta.moe/assets/UI/UI_Buff_Element_Water.png',
+    ),
+    'pyro': EmojiAsset(
+        filename='UI_Buff_Element_Fire.png',
+        url='https://gi.yatta.moe/assets/UI/UI_Buff_Element_Fire.png',
+    ),
+}
+
 EMOJI_ASSETS = {
-    f'stygian_{name}': EmojiAsset(
-        filename=f'UI_LeyLineChallenge_Medal_{index}.png',
-        url=f'https://enka.network/ui/UI_LeyLineChallenge_Medal_{index}.png',
-    )
-    for index, name in enumerate(
-        ('easy', 'normal', 'hard', 'master', 'extra', 'ultimate'), start=1
-    )
+    **{
+        f'stygian_{name}': EmojiAsset(
+            filename=f'UI_LeyLineChallenge_Medal_{index}.png',
+            url=f'https://enka.network/ui/UI_LeyLineChallenge_Medal_{index}.png',
+        )
+        for index, name in enumerate(
+            ('easy', 'normal', 'hard', 'master', 'extra', 'ultimate'), start=1
+        )
+    },
+    **{
+        f'element_{element}': asset
+        for element, asset in ELEMENT_EMOJI_ASSETS.items()
+    },
 }
 
 _application_emojis: dict[str, discord.Emoji] = {}

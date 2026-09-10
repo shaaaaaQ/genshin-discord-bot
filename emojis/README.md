@@ -27,3 +27,7 @@ https://enka.network/ui/UI_LeyLineChallenge_Medal_6.png
 ```
 
 取得した画像はリポジトリのUnlicense対象外です。画像の権利は各権利者に帰属します。
+
+### 元素アイコン
+
+ガチャ情報のキャラクター表示では、Project Amberの素材CDNから7元素のゲーム内UI素材を取得し、Application Emojiとして使用します。絵文字を利用できない場合は `[炎]` のような文字で表示します。
