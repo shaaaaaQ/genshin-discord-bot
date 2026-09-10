@@ -43,6 +43,7 @@ class Stage(commands.Cog):
         guid: str,
         region: Region | None = None,
     ):
+        """幻境のGUIDからステージ情報を表示します。"""
         guid = guid.strip()
         if (
             not guid.isascii()

@@ -23,6 +23,7 @@ class Gacha(commands.Cog):
     @commands.hybrid_command(description='現在の原神のガチャ情報を表示します')
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def gacha(self, ctx: commands.Context) -> None:
+        """現在の原神のガチャ情報を表示します。"""
         await ctx.defer()
         try:
             banners = await self.client.fetch()

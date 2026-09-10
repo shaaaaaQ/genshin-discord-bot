@@ -123,6 +123,7 @@ class Codes(commands.Cog):
         self,
         ctx: commands.Context,
     ) -> None:
+        """交換コード通知の設定を管理します。"""
         if ctx.guild is None:
             return
 
@@ -145,6 +146,7 @@ class Codes(commands.Cog):
         ctx: commands.Context,
         channel: discord.TextChannel,
     ) -> None:
+        """交換コードの通知先を設定します。"""
         if ctx.guild is None:
             return
 
@@ -180,6 +182,7 @@ class Codes(commands.Cog):
     @commands.guild_only()
     @commands.has_guild_permissions(administrator=True)
     async def codesnotify_remove(self, ctx: commands.Context) -> None:
+        """交換コードの通知を解除します。"""
         if ctx.guild is None:
             return
 
@@ -194,6 +197,7 @@ class Codes(commands.Cog):
     @commands.hybrid_command(description='現在利用できる原神の交換コードを表示します')
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def codes(self, ctx: commands.Context) -> None:
+        """現在利用できる原神の交換コードを表示します。"""
         await ctx.defer()
         try:
             codes = await self.client.fetch()

@@ -63,6 +63,7 @@ class Profile(commands.Cog):
     @commands.hybrid_command(description='原神の公開プロフィールを表示します')
     @app_commands.describe(uid='原神のUID（省略すると前回のUIDを使用）')
     async def profile(self, ctx: commands.Context, uid: str | None = None):
+        """原神の公開プロフィールを表示します。"""
         if uid is None:
             uid = await get_user_uid(ctx.author.id)
         if uid is None:
