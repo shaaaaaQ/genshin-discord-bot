@@ -87,6 +87,14 @@ bot
 |-|-|
 |gacha|`-gacha`|
 
+### ゲーム内イベント
+
+[hoyoverse-api](https://github.com/torikushiii/hoyoverse-api) から、現在の原神のゲーム内イベント・開催期間・主な報酬を日本語で取得して表示します。
+
+|コマンド|例（prefix が `-` の場合）|
+|-|-|
+|events|`-events`|
+
 ## 免責事項
 
 本プロジェクトは非公式のファンプロジェクトです。

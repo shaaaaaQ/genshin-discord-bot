@@ -1,6 +1,7 @@
 import unittest
 
 from cogs.codes import Codes
+from cogs.events import Events
 from cogs.gacha import Gacha
 from cogs.profile import Profile
 from cogs.stage import Stage
@@ -11,6 +12,7 @@ class HelpDescriptionTests(unittest.TestCase):
         commands = (
             Codes.codes,
             Codes.codesnotify,
+            Events.events,
             Gacha.gacha,
             Profile.profile,
             Stage.stage,
