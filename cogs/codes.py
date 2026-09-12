@@ -41,11 +41,15 @@ class Codes(commands.Cog):
             )
         return channel
 
-    @tasks.loop(hours=1)
+    @tasks.loop(minutes=15)
     async def check_for_new_codes(self) -> None:
+        logger.info('Checking for new exchange codes')
         try:
             settings = await self.state.get_settings()
             if not settings:
+                logger.info(
+                    'Exchange code check completed: no notification settings'
+                )
                 return
             codes = await self.client.fetch()
             current_keys = {code.key for code in codes}
@@ -103,6 +107,11 @@ class Codes(commands.Cog):
                         'Exchange code notification failed for guild %d',
                         setting.guild_id,
                     )
+            logger.info(
+                'Exchange code check completed: %d active code(s), %d guild(s)',
+                len(codes),
+                len(settings),
+            )
         except CodesError as error:
             logger.warning('Periodic exchange code lookup failed: %s', error)
         except (OSError, sqlite3.Error, ValueError):

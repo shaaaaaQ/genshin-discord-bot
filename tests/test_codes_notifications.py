@@ -6,6 +6,9 @@ from services.codes import CodesNotificationSetting, RedemptionCode
 
 
 class CodesNotificationTests(unittest.IsolatedAsyncioTestCase):
+    def test_check_interval_is_fifteen_minutes(self) -> None:
+        self.assertEqual(Codes.check_for_new_codes.minutes, 15)
+
     def make_cog(
         self,
         setting: CodesNotificationSetting,
