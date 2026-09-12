@@ -101,7 +101,7 @@ bot
 
 依存ライブラリには、それぞれのライセンスが適用されます。
 
-下記ライブラリはGPLv3で提供されており、結合したプログラム全体の配布にはGPLv3が適用されます。([COPYING.GPLv3](COPYING.GPLv3))
+下記ライブラリはGPLv3で提供されており、結合したプログラム全体の配布にはGPL-3.0が適用されます。([COPYING.GPLv3](COPYING.GPLv3))
 - [enka-py](https://github.com/seriaati/enka-py)
 
 
